@@ -1,0 +1,124 @@
+import { CuadreMayor, EstadoCuadre, ModalidadVentaMayor } from '@prisma/client';
+import { Decimal } from 'decimal.js';
+import {
+  EvaluacionFinanciera,
+  TandaAfectada,
+  GananciaReclutadorMayor,
+} from './cuadre-mayor.entity';
+
+/**
+ * Cuadre al mayor con relaciones
+ */
+export interface CuadreMayorConRelaciones extends CuadreMayor {
+  ventaMayor?: {
+    id: string;
+    cantidadUnidades: number;
+    conLicor: boolean;
+    estado: string;
+  };
+  gananciasReclutadores?: {
+    id: string;
+    reclutadorId: string;
+    nivel: number;
+    monto: any;
+    transferido: boolean;
+  }[];
+}
+
+/**
+ * Opciones para listar cuadres al mayor
+ */
+export interface FindCuadresMayorOptions {
+  skip?: number;
+  take?: number;
+  cursor?: string;
+  where?: {
+    vendedorId?: string;
+    estado?: EstadoCuadre;
+    modalidad?: ModalidadVentaMayor;
+  };
+}
+
+/**
+ * Respuesta paginada de cuadres al mayor
+ */
+export interface PaginatedCuadresMayor {
+  data: CuadreMayorConRelaciones[];
+  total: number;
+  hasMore: boolean;
+  nextCursor?: string;
+}
+
+/**
+ * Datos para crear un cuadre al mayor
+ */
+export interface CreateCuadreMayorData {
+  ventaMayorId: string;
+  vendedorId: string;
+  modalidad: ModalidadVentaMayor;
+  cantidadUnidades: number;
+  precioUnidad: Decimal;
+  ingresoBruto: Decimal;
+  deudasSaldadas: Decimal;
+  inversionAdminLotesExistentes: Decimal;
+  inversionAdminLoteForzado: Decimal;
+  inversionVendedorLotesExistentes: Decimal;
+  inversionVendedorLoteForzado: Decimal;
+  gananciasAdmin: Decimal;
+  gananciasVendedor: Decimal;
+  evaluacionFinanciera: EvaluacionFinanciera;
+  montoTotalAdmin: Decimal;
+  montoTotalVendedor: Decimal;
+  lotesInvolucradosIds: string[];
+  tandasAfectadas: TandaAfectada[];
+  loteForzadoId?: string;
+  gananciasReclutadores: GananciaReclutadorMayor[];
+}
+
+/**
+ * Interface del repositorio de cuadres al mayor
+ */
+export interface ICuadreMayorRepository {
+  /**
+   * Busca un cuadre al mayor por ID
+   */
+  findById(id: string): Promise<CuadreMayorConRelaciones | null>;
+
+  /**
+   * Busca un cuadre al mayor por ID de venta
+   */
+  findByVentaMayorId(ventaMayorId: string): Promise<CuadreMayorConRelaciones | null>;
+
+  /**
+   * Lista cuadres al mayor con filtros y paginación
+   */
+  findAll(options?: FindCuadresMayorOptions): Promise<PaginatedCuadresMayor>;
+
+  /**
+   * Lista cuadres al mayor de un vendedor
+   */
+  findByVendedorId(
+    vendedorId: string,
+    options?: FindCuadresMayorOptions,
+  ): Promise<PaginatedCuadresMayor>;
+
+  /**
+   * Crea un nuevo cuadre al mayor
+   */
+  create(data: CreateCuadreMayorData): Promise<CuadreMayor>;
+
+  /**
+   * Confirma un cuadre al mayor como exitoso
+   */
+  confirmarExitoso(id: string, cuadresCerradosIds: string[]): Promise<CuadreMayor>;
+
+  /**
+   * Cuenta cuadres al mayor por criterio
+   */
+  count(options?: { vendedorId?: string; estado?: EstadoCuadre }): Promise<number>;
+}
+
+/**
+ * Token de inyección para el repositorio
+ */
+export const CUADRE_MAYOR_REPOSITORY = Symbol('CUADRE_MAYOR_REPOSITORY');

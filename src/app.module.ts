@@ -1,0 +1,110 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CqrsModule } from '@nestjs/cqrs';
+import { WinstonModule } from 'nest-winston';
+import { APP_GUARD } from '@nestjs/core';
+
+import { configuration, validationSchema } from './config';
+import { winstonConfig } from './shared/utils/logger.util';
+
+// Infrastructure modules
+import { PrismaModule } from './infrastructure/database/prisma/prisma.module';
+import { CacheModule } from './infrastructure/cache/cache.module';
+import { QueueModule } from './infrastructure/queue/queue.module';
+import { EventsModule } from './infrastructure/events/events.module';
+import { SchedulerModule } from './infrastructure/scheduler/scheduler.module';
+
+// Feature modules
+import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsuariosModule } from './modules/usuarios/usuarios.module';
+import { LotesModule } from './modules/lotes/lotes.module';
+import { VentasModule } from './modules/ventas/ventas.module';
+import { CuadresModule } from './modules/cuadres/cuadres.module';
+import { VentasMayorModule } from './modules/ventas-mayor/ventas-mayor.module';
+import { CuadresMayorModule } from './modules/cuadres-mayor/cuadres-mayor.module';
+import { MiniCuadresModule } from './modules/mini-cuadres/mini-cuadres.module';
+import { EquipamientoModule } from './modules/equipamiento/equipamiento.module';
+import { FondoRecompensasModule } from './modules/fondo-recompensas/fondo-recompensas.module';
+import { NotificacionesModule } from './modules/notificaciones/notificaciones.module';
+import { AdminModule } from './modules/admin/admin.module';
+
+@Module({
+  imports: [
+    // Configuración global con validación Joi
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+      validationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: false,
+      },
+      envFilePath: [
+        `.env.${process.env.NODE_ENV || 'development'}`,
+        '.env',
+      ],
+    }),
+
+    // Winston Logger global
+    WinstonModule.forRoot(winstonConfig),
+
+    // Rate Limiting global (sección 22.4)
+    ThrottlerModule.forRoot([
+      {
+        name: 'global',
+        ttl: 60000, // 60 segundos
+        limit: 100, // 100 requests por minuto por IP
+      },
+    ]),
+
+    // Event Emitter para eventos internos
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false,
+    }),
+
+    // Scheduler para jobs programados
+    ScheduleModule.forRoot(),
+
+    // CQRS para separación de comandos y consultas
+    CqrsModule.forRoot(),
+
+    // Infrastructure modules
+    PrismaModule,
+    CacheModule,
+    QueueModule,
+    EventsModule,
+    SchedulerModule,
+
+    // Feature modules
+    HealthModule,
+    AuthModule,
+    UsuariosModule,
+    LotesModule,
+    VentasModule,
+    CuadresModule,
+    VentasMayorModule,
+    CuadresMayorModule,
+    MiniCuadresModule,
+    EquipamientoModule,
+    FondoRecompensasModule,
+    NotificacionesModule,
+    AdminModule,
+  ],
+  controllers: [],
+  providers: [
+    // ThrottlerGuard global para rate limiting
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
+})
+export class AppModule {}

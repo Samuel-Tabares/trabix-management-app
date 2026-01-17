@@ -1,0 +1,33 @@
+# ===========================================
+# TRABIX Backend - Dockerfile (Development)
+# ===========================================
+
+FROM node:20-alpine
+
+# Instalar herramientas necesarias
+RUN apk add --no-cache wget
+
+# Configurar variables de entorno
+ENV NODE_ENV=development
+ENV PORT=3000
+
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Instalar todas las dependencias
+RUN npm install
+
+# Generar cliente de Prisma
+RUN npx prisma generate
+
+# Copiar código fuente
+COPY . .
+
+# Exponer puerto
+EXPOSE 3000
+
+# Comando de inicio en modo desarrollo
+CMD ["npm", "run", "start:dev"]

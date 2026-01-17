@@ -1,0 +1,174 @@
+import { Usuario, Rol, EstadoUsuario } from '@prisma/client';
+
+/**
+ * Interface del repositorio de usuarios
+ * Según Clean Architecture: la capa de dominio define la interface,
+ * la capa de infraestructura la implementa
+ */
+export interface IUsuarioRepository {
+  /**
+   * Busca un usuario por ID
+   */
+  findById(id: string): Promise<Usuario | null>;
+
+  /**
+   * Busca un usuario por email
+   */
+  findByEmail(email: string): Promise<Usuario | null>;
+
+  /**
+   * Busca un usuario por cédula
+   */
+  findByCedula(cedula: string): Promise<Usuario | null>;
+
+  /**
+   * Busca un usuario por teléfono
+   */
+  findByTelefono(telefono: string): Promise<Usuario | null>;
+
+  /**
+   * Lista usuarios con filtros y paginación
+   */
+  findAll(options: FindAllUsuariosOptions): Promise<PaginatedUsuarios>;
+
+  /**
+   * Lista los reclutados de un usuario
+   */
+  findReclutados(reclutadorId: string): Promise<Usuario[]>;
+
+  /**
+   * Obtiene la jerarquía completa de un usuario (árbol de reclutados)
+   */
+  findJerarquia(usuarioId: string): Promise<UsuarioJerarquia>;
+
+  /**
+   * Obtiene la cadena de reclutadores hacia arriba
+   */
+  findCadenaReclutadores(usuarioId: string): Promise<Usuario[]>;
+
+  /**
+   * Crea un nuevo usuario
+   */
+  create(data: CreateUsuarioData): Promise<Usuario>;
+
+  /**
+   * Actualiza un usuario
+   */
+  update(id: string, data: UpdateUsuarioData): Promise<Usuario>;
+
+  /**
+   * Cambia el estado de un usuario
+   */
+  cambiarEstado(id: string, estado: EstadoUsuario): Promise<Usuario>;
+
+  /**
+   * Elimina un usuario (soft delete)
+   */
+  softDelete(id: string): Promise<Usuario>;
+
+  /**
+   * Cuenta usuarios por criterio
+   */
+  count(options?: CountUsuariosOptions): Promise<number>;
+
+  /**
+   * Verifica si existe un usuario con el email
+   */
+  existsByEmail(email: string, excludeId?: string): Promise<boolean>;
+
+  /**
+   * Verifica si existe un usuario con la cédula
+   */
+  existsByCedula(cedula: string, excludeId?: string): Promise<boolean>;
+
+  /**
+   * Verifica si existe un usuario con el teléfono
+   */
+  existsByTelefono(telefono: string, excludeId?: string): Promise<boolean>;
+}
+
+/**
+ * Opciones para listar usuarios
+ */
+export interface FindAllUsuariosOptions {
+  skip?: number;
+  take?: number;
+  cursor?: string;
+  where?: {
+    rol?: Rol;
+    estado?: EstadoUsuario;
+    eliminado?: boolean;
+    reclutadorId?: string | null;
+    search?: string; // Búsqueda por nombre, apellidos, email o cédula
+  };
+  orderBy?: {
+    field: 'fechaCreacion' | 'nombre' | 'apellidos' | 'email';
+    direction: 'asc' | 'desc';
+  };
+  includeReclutador?: boolean;
+}
+
+/**
+ * Respuesta paginada de usuarios
+ */
+export interface PaginatedUsuarios {
+  data: Usuario[];
+  total: number;
+  hasMore: boolean;
+  nextCursor?: string;
+}
+
+/**
+ * Datos para crear usuario
+ */
+export interface CreateUsuarioData {
+  cedula: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  telefono: string;
+  passwordHash: string;
+  reclutadorId?: string | null;
+  rol?: Rol;
+}
+
+/**
+ * Datos para actualizar usuario
+ */
+export interface UpdateUsuarioData {
+  nombre?: string;
+  apellidos?: string;
+  email?: string;
+  telefono?: string;
+  passwordHash?: string;
+  requiereCambioPassword?: boolean;
+  refreshTokenHash?: string | null;
+  intentosFallidos?: number;
+  bloqueadoHasta?: Date | null;
+  ultimoLogin?: Date;
+}
+
+/**
+ * Opciones para contar usuarios
+ */
+export interface CountUsuariosOptions {
+  rol?: Rol;
+  estado?: EstadoUsuario;
+  eliminado?: boolean;
+  reclutadorId?: string;
+}
+
+/**
+ * Estructura de jerarquía de usuario
+ */
+export interface UsuarioJerarquia {
+  usuario: Usuario;
+  reclutados: UsuarioJerarquia[];
+  totalReclutados: number;
+  nivel: number;
+}
+
+/**
+ * Token de inyección para el repositorio
+ */
+export const USUARIO_REPOSITORY = Symbol('USUARIO_REPOSITORY');

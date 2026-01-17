@@ -1,0 +1,139 @@
+# ===========================================
+# TRABIX Backend - Docker Compose (Development)
+# Servicios: API (hot-reload), PostgreSQL, Redis
+# ===========================================
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # NestJS API (Development con hot-reload)
+  # ===========================================
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    container_name: trabix-api-dev
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Puerto para debugging
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://trabix_user:trabix_password@db:5432/trabix_db
+      - REDIS_URL=redis://:trabix_redis_password@redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=trabix_redis_password
+      - JWT_SECRET=dev-secret-key-change-in-production-minimum-32-chars
+      - JWT_REFRESH_SECRET=dev-refresh-secret-key-change-in-production-min-32
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=pretty
+    volumes:
+      - ../src:/app/src:delegated
+      - ../prisma:/app/prisma:delegated
+      - ../package.json:/app/package.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../nest-cli.json:/app/nest-cli.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trabix-network-dev
+    restart: unless-stopped
+
+  # ===========================================
+  # PostgreSQL Database (Development)
+  # ===========================================
+  db:
+    image: postgres:16-alpine
+    container_name: trabix-db-dev
+    environment:
+      - POSTGRES_USER=trabix_user
+      - POSTGRES_PASSWORD=trabix_password
+      - POSTGRES_DB=trabix_db
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - trabix-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trabix_user -d trabix_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===========================================
+  # Redis Cache & Queue (Development)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: trabix-redis-dev
+    command: redis-server --requirepass trabix_redis_password --appendonly yes
+    volumes:
+      - redis_data_dev:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - trabix-network-dev
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "trabix_redis_password", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Adminer (Database Management UI)
+  # ===========================================
+  adminer:
+    image: adminer:latest
+    container_name: trabix-adminer-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+    depends_on:
+      - db
+    networks:
+      - trabix-network-dev
+    restart: unless-stopped
+
+  # ===========================================
+  # Redis Commander (Redis Management UI)
+  # ===========================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: trabix-redis-commander-dev
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=trabix_redis_password
+    depends_on:
+      - redis
+    networks:
+      - trabix-network-dev
+    restart: unless-stopped
+
+# ===========================================
+# Volumes
+# ===========================================
+volumes:
+  postgres_data_dev:
+    driver: local
+  redis_data_dev:
+    driver: local
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  trabix-network-dev:
+    driver: bridge
