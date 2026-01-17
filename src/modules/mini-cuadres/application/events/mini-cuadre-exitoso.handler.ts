@@ -19,28 +19,32 @@ export class MiniCuadreExitosoHandler
   constructor(private readonly commandBus: CommandBus) {}
 
   async handle(event: MiniCuadreExitosoEvent): Promise<void> {
-    this.logger.log(
-      `Procesando MiniCuadreExitosoEvent: ${event.miniCuadreId} - ` +
-      `Lote: ${event.loteId} - ` +
-      `Vendedor: ${event.vendedorId} - ` +
-      `Monto final: $${Number.parseFloat(event.montoFinal).toFixed(2)}`,
-    );
+      if (typeof event.montoFinal === "string") {
+          this.logger.log(
+              `Procesando MiniCuadreExitosoEvent: ${event.miniCuadreId} - ` +
+              `Lote: ${event.loteId} - ` +
+              `Vendedor: ${event.vendedorId} - ` +
+              `Monto final: $${Number.parseFloat(event.montoFinal).toFixed(2)}`,
+          );
+      }
 
     try {
       // Enviar notificación al vendedor - lote finalizado
-      await this.commandBus.execute(
-        new EnviarNotificacionCommand(
-          event.vendedorId,
-          'MANUAL',
-          {
-            titulo: '🎊 ¡Lote Finalizado!',
-            mensaje: `Tu lote ha sido completado exitosamente. Monto final: $${Number.parseFloat(event.montoFinal).toFixed(2)}`,
-            loteId: event.loteId,
-            miniCuadreId: event.miniCuadreId,
-            montoFinal: Number.parseFloat(event.montoFinal),
-          },
-        ),
-      );
+        if (typeof event.montoFinal === "string") {
+            await this.commandBus.execute(
+                new EnviarNotificacionCommand(
+                    event.vendedorId,
+                    'MANUAL',
+                    {
+                        titulo: '🎊 ¡Lote Finalizado!',
+                        mensaje: `Tu lote ha sido completado exitosamente. Monto final: $${Number.parseFloat(event.montoFinal).toFixed(2)}`,
+                        loteId: event.loteId,
+                        miniCuadreId: event.miniCuadreId,
+                        montoFinal: Number.parseFloat(event.montoFinal),
+                    },
+                ),
+            );
+        }
 
       this.logger.log(
         `MiniCuadreExitosoEvent procesado: ${event.miniCuadreId} - Lote ${event.loteId} FINALIZADO`,

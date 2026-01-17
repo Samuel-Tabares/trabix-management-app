@@ -145,7 +145,7 @@ export class CalcularStockDisponibleHandler
     query: CalcularStockDisponibleQuery,
   ): Promise<StockDisponibleResponseDto> {
     const lotes = await this.loteRepository.findByVendedor(query.vendedorId);
-    const lotesActivos = lotes.filter((l: any) => l.estado === 'ACTIVO');
+      const lotesActivos = lotes.data.filter((l: any) => l.estado === 'ACTIVO');
 
     const stockDisponible = this.consumidorStock.calcularStockDisponible(
       lotesActivos.map((l: any) => ({

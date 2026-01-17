@@ -23,7 +23,7 @@ import { JerarquiaReclutador } from '@modules/cuadres';
 
 /**
  * Handler del evento VentaMayorRegistrada
- * 
+ *
  * Genera el cuadre al mayor con:
  * - Evaluación financiera completa
  * - Distribución de dinero
@@ -78,7 +78,7 @@ export class VentaMayorRegistradaHandler
 
       for (const lote of lotesInvolucrados) {
         if (!lote) continue;
-        
+
         dineroRecaudadoDetal = dineroRecaudadoDetal.plus(
           new Decimal(lote.dineroRecaudado).minus(lote.dineroTransferido),
         );
@@ -96,7 +96,7 @@ export class VentaMayorRegistradaHandler
       // Crear lote forzado si es necesario
       let loteForzado = null;
       let loteForzadoId: string | undefined;
-      
+
       if (event.necesitaLoteForzado && event.cantidadLoteForzado > 0) {
         // Calcular inversiones del lote forzado
         const inversionesLoteForzado = this.calculadoraInversion.calcularInversiones(
@@ -105,13 +105,13 @@ export class VentaMayorRegistradaHandler
 
         // Crear lote forzado (se activará y finalizará al confirmar el cuadre)
         const nuevoLoteForzado = await this.loteRepository.create({
-          vendedorId: event.vendedorId,
+            tandas: [],
+            vendedorId: event.vendedorId,
           cantidadTrabix: event.cantidadLoteForzado,
-          precioUnitario: inversionesLoteForzado.precioUnitario,
           inversionAdmin: inversionesLoteForzado.inversionAdmin,
           inversionVendedor: inversionesLoteForzado.inversionVendedor,
           inversionTotal: inversionesLoteForzado.inversionTotal,
-          modeloNegocio: vendedor.modeloNegocio,
+            modeloNegocio: (vendedor as any).modeloNegocio
         });
 
         loteForzadoId = nuevoLoteForzado.id;
@@ -121,7 +121,7 @@ export class VentaMayorRegistradaHandler
           inversionVendedor: inversionesLoteForzado.inversionVendedor,
           dineroRecaudado: new Decimal(0),
           dineroTransferido: new Decimal(0),
-          modeloNegocio: vendedor.modeloNegocio,
+            modeloNegocio: (vendedor as any).modeloNegocio,
         };
 
         this.logger.log(
@@ -143,7 +143,7 @@ export class VentaMayorRegistradaHandler
           equipamientoPendiente: new Decimal(0), // TODO: calcular equipamiento pendiente
           total: new Decimal(0),
         },
-        modeloNegocio: vendedor.modeloNegocio,
+          modeloNegocio: (vendedor as any).modeloNegocio,
         jerarquiaReclutadores: jerarquia,
       });
 
@@ -158,7 +158,7 @@ export class VentaMayorRegistradaHandler
           equipamientoPendiente: new Decimal(0),
           total: new Decimal(0),
         },
-        modeloNegocio: vendedor.modeloNegocio,
+          modeloNegocio: (vendedor as any).modeloNegocio,
         jerarquiaReclutadores: jerarquia,
       });
 
@@ -222,7 +222,7 @@ export class VentaMayorRegistradaHandler
       const reclutador = await this.usuarioRepository.findById(
         usuarioActual.reclutadorId,
       );
-      
+
       if (reclutador && reclutador.rol !== 'ADMIN') {
         jerarquia.push({
           id: reclutador.id,

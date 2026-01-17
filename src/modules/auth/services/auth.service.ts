@@ -130,14 +130,17 @@ export class AuthService {
    * Renueva el access token usando un refresh token
    * Según sección 22.1: Valida token y hash en BD, rotación de tokens
    */
-  async refreshTokens(refreshToken: string): Promise<AuthResponseDto> {
+  async refreshTokens(refreshToken: string | undefined): Promise<AuthResponseDto> {
     try {
       // Verificar refresh token
-      const payload = this.jwtService.verify<RefreshTokenPayload & { exp: number }>(refreshToken, {
-        secret: this.configService.get<string>('jwt.refreshSecret'),
-      });
+        const payload = this.jwtService.verify<RefreshTokenPayload & { exp: number }>(
+            refreshToken!,
+            {
+                secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+            },
+        );
 
-      // Verificar que tenga tokenId (estructura de refresh token)
+        // Verificar que tenga tokenId (estructura de refresh token)
       if (!payload.tokenId) {
         throw new UnauthorizedException('Token inválido');
       }
@@ -162,7 +165,10 @@ export class AuthService {
         throw new UnauthorizedException('Sesión inválida');
       }
 
-      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+        const isRefreshTokenValid = await bcrypt.compare(
+            refreshToken!,
+            user.refreshTokenHash,
+        );
       if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Token inválido');
       }

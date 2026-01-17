@@ -51,7 +51,7 @@ export class ObtenerVentaHandler
             cantidad: d.cantidad,
             precioUnitario: Number.parseFloat(d.precioUnitario),
             subtotal: Number.parseFloat(d.subtotal),
-            trabixConsumidos: d.cantidad * TRABIX_POR_TIPO[d.tipo],
+            trabixConsumidos: d.cantidad * TRABIX_POR_TIPO[d.tipo as keyof typeof TRABIX_POR_TIPO],
         }));
 
         const cantidadRegalos = detalles

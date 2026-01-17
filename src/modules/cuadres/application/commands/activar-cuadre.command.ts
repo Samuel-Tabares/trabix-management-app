@@ -69,19 +69,18 @@ export class ActivarCuadreHandler
     );
 
     // Enviar notificación de cuadre pendiente
-    await this.commandBus.execute(
-      new EnviarNotificacionCommand(
-        cuadre.tanda.lote.vendedorId,
-        'CUADRE_PENDIENTE',
-        {
-          cuadreId: cuadreId,
-          tandaId: cuadre.tandaId,
-          numeroTanda: cuadre.tanda.numero,
-          montoEsperado: Number.parseFloat(cuadre.montoEsperado.toString()),
-        },
-      ),
-    );
-
-    return cuadreActivado;
+      await this.commandBus.execute(
+          new EnviarNotificacionCommand(
+              cuadre.tanda.lote!.vendedorId,
+              'CUADRE_PENDIENTE',
+              {
+                  cuadreId: cuadreId,
+                  tandaId: cuadre.tandaId,
+                  numeroTanda: cuadre.tanda.numero,
+                  montoEsperado: Number.parseFloat(cuadre.montoEsperado.toString()),
+              },
+          ),
+      );
+      return cuadreActivado;
   }
 }

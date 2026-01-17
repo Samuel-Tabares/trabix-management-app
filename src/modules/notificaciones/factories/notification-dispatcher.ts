@@ -41,9 +41,14 @@ export class WebSocketChannel implements INotificationChannel {
       }
       return false;
     } catch (error) {
-      this.logger.error(`Error enviando WebSocket: ${error.message}`);
-      return false;
+        this.logger.error(
+            `Error enviando WebSocket: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
+        return false;
     }
+
   }
 }
 
@@ -61,8 +66,12 @@ export class PushChannel implements INotificationChannel {
       this.logger.log(`Push notification enviada a ${notificacion.usuarioId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Error enviando Push: ${error.message}`);
-      return false;
+        this.logger.error(
+            `Error enviando Push: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
+        return false;
     }
   }
 }
@@ -81,8 +90,12 @@ export class WhatsAppChannel implements INotificationChannel {
       this.logger.log(`WhatsApp enviado a ${notificacion.usuarioId}`);
       return true;
     } catch (error) {
-      this.logger.error(`Error enviando WhatsApp: ${error.message}`);
-      return false;
+        this.logger.error(
+            `Error enviando WhatsApp: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
+        return false;
     }
   }
 }

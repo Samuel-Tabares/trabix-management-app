@@ -77,7 +77,11 @@ export class NotificacionesGateway
         await this.authenticateClient(client, token);
       }
     } catch (error) {
-      this.logger.warn(`Error en conexión inicial: ${error.message}`);
+        this.logger.warn(
+            `Error en conexión inicial: ${
+                error instanceof Error ? error.message : String(error)
+            }`,
+        );
     }
   }
 
@@ -101,7 +105,10 @@ export class NotificacionesGateway
       await this.authenticateClient(client, data.token);
       return { success: true, message: 'Suscrito exitosamente' };
     } catch (error) {
-      return { success: false, message: error.message };
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : String(error),
+        };
     }
   }
 

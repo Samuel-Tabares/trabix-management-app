@@ -88,7 +88,7 @@ export class PrismaNotificacionRepository implements INotificacionRepository {
         tipo: data.tipo,
         titulo: data.titulo,
         mensaje: data.mensaje,
-        datos: data.datos || null,
+        datos: data.datos ?? undefined,
         canal: data.canal || 'WEBSOCKET',
       },
     });

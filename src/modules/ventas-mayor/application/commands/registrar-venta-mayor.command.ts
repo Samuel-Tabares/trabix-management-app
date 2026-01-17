@@ -66,7 +66,7 @@ export class RegistrarVentaMayorHandler
 
     // Obtener lotes activos del vendedor
     const lotes = await this.loteRepository.findByVendedor(vendedorId);
-    const lotesActivos = lotes.filter((l: any) => l.estado === 'ACTIVO');
+    const lotesActivos = lotes.data.filter((l: any) => l.estado === 'ACTIVO');
 
     // Generar plan de consumo de stock
     const planConsumo = this.consumidorStock.generarPlanConsumo(
