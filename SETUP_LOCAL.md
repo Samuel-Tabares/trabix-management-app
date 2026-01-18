@@ -22,10 +22,7 @@ npx prisma generate
 ```
 
 ### 3. Configurar variables de entorno
-
-```bash
-cp .env.example .env
-```
+#### en el archivo .env
 
 Editar `.env` con tus valores:
 

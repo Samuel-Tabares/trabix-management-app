@@ -34,10 +34,7 @@ Backend API para el sistema de gestión de ventas de granizados TRABIX.
    ```
 
 3. **Configurar variables de entorno:**
-   ```bash
-   cp .env.example .env
    # Editar .env con tus configuraciones
-   ```
 
 4. **Iniciar servicios con Docker:**
    ```bash

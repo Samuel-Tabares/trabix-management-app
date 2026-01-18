@@ -25,7 +25,6 @@ Docker (opcional pero recomendado)
 ### 1.2 Configurar Base de Datos de Testing
 ```bash
 # Crear archivo .env.test
-cp .env.example .env.test
 
 # Editar .env.test con:
 DATABASE_URL="postgresql://postgres:password@localhost:5432/trabix_test"
