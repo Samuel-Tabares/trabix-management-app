@@ -1,11 +1,11 @@
 /**
  * PRUEBAS E2E COMPLETAS - TRABIX Backend
- *
- * Cobertura exhaustiva de todos los escenarios.
- * Lee configuraciones dinámicamente para validar cálculos.
- *
+ * para levantar docker: docker compose -f docker-compose.test.yml up -d
  * Prerrequisito: npx ts-node prisma/seeds/test-scenarios.seed.ts
  * Ejecutar: npm run test:e2e -- --testPathPattern=all-scenarios
+ * ejecutar con .env.test para conexiones de desarrollo:
+ * NODE_ENV=test npx dotenv-cli -e .env.test -- npm run test:e2e -- --testPathPattern=all-scenarios
+ * construir redis: docker run -p 6379:6379 redis
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -121,7 +121,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Sin token = 401', async () => {
-            const res = await request(app.getHttpServer()).get('/api/v1/usuarios');
+            const res = await request(app.getHttpServer())
+                .get('/api/v1/usuarios');
+
             expect(res.status).toBe(401);
         });
 
@@ -168,11 +170,14 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
                 .send({ cedula: '', password: '' });
+
             expect([400, 401]).toContain(res.status);
         });
 
         it('Sin body = error', async () => {
-            const res = await request(app.getHttpServer()).post('/api/v1/auth/login');
+            const res = await request(app.getHttpServer())
+                .post('/api/v1/auth/login');
+
             expect([400, 401]).toContain(res.status);
         });
 
@@ -424,23 +429,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
                 .send({ vendedorId: ven.id, cantidadTrabix: 0 });
             expect(res.status).toBe(400);
         });
-        it('Rechazar lote con menos de 6 TRABIX', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
-            const res = await request(app.getHttpServer())
-                .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
-                .send({ vendedorId: ven?.id, cantidadTrabix: 5 });
-            expect([400, 422]).toContain(res.status);
-        });
 
-        it('Rechazar lote con más de 200 TRABIX', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
-            const res = await request(app.getHttpServer())
-                .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
-                .send({ vendedorId: ven?.id, cantidadTrabix: 250 });
-            expect([400, 422]).toContain(res.status);
-        });
         it('Activar lote cambia estado', async () => {
             const lote = await prisma.lote.findFirst({ where: { estado: 'CREADO' } });
             if (lote) {

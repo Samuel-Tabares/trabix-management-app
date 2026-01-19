@@ -231,9 +231,9 @@ describe('Lógica de Negocio - TRABIX', () => {
             expect(validarLimiteRegalos(0,50,limite)).toBe(true);
         });
         it('Venta al mayor', () => {
-            const minimo = CONFIG['MINIMO_VENTA_MAYOR'] ?? 21;
-            expect(validarVentaMayor(21,minimo)).toBe(true);
-            expect(validarVentaMayor(20,minimo)).toBe(false);
+            const minimo = CONFIG['MINIMO_VENTA_MAYOR'] ?? 20;
+            expect(validarVentaMayor(20,minimo)).toBe(true);
+            expect(validarVentaMayor(19,minimo)).toBe(false);
             expect(validarVentaMayor(100,minimo)).toBe(true);
             expect(validarVentaMayor(0,minimo)).toBe(false);
         });
