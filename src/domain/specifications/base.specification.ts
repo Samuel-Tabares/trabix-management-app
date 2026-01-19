@@ -42,7 +42,7 @@ export interface ISpecification<T> {
  */
 export abstract class BaseSpecification<T> implements ISpecification<T> {
   /**
-   * Método que debe ser implementado por las especificaciones concretas
+   * Métoddo que debe ser implementado por las especificaciones concretas
    */
   abstract isSatisfiedBy(candidate: T): boolean;
 

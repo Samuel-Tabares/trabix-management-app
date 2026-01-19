@@ -51,38 +51,6 @@ npx prisma db seed
 npm run start:dev
 ```
 
-## Solución de Problemas Comunes
-
-### Error: "Property has no initializer"
-
-Esto es normal con DTOs de NestJS que usan class-validator. Si necesitas suprimir estos errores temporalmente, puedes:
-
-1. Agregar `!` después de las propiedades en los DTOs:
-   ```typescript
-   @ApiProperty()
-   id!: string;
-   ```
-
-2. O en `tsconfig.json`, agregar:
-   ```json
-   {
-     "compilerOptions": {
-       "strictPropertyInitialization": false
-     }
-   }
-   ```
-
-### Error: Cannot find module '@prisma/client'
-
-Ejecutar:
-```bash
-npx prisma generate
-```
-
-### Error con bcrypt nativo
-
-El proyecto usa `bcryptjs` (implementación JavaScript pura) en lugar de `bcrypt` nativo para evitar problemas de compilación.
-
 ## Estructura del Proyecto
 
 ```

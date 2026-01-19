@@ -2,13 +2,14 @@ import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
-import { VentasMayorController } from '@modules/ventas-mayor/controllers';
+import { VentasMayorController } from './controllers/ventas-mayor.controller';
 
 // Domain
-import { VENTA_MAYOR_REPOSITORY, ConsumidorStockMayorService } from '@modules/ventas-mayor/domain';
+import { ConsumidorStockMayorService } from './domain/consumidor-stock-mayor.service';
+import { VENTA_MAYOR_REPOSITORY } from './domain/venta-mayor.repository.interface';
 
 // Infrastructure
-import { PrismaVentaMayorRepository } from '@modules/ventas-mayor/infrastructure';
+import { PrismaVentaMayorRepository } from './infrastructure/prisma-venta-mayor.repository';
 
 // Application
 import { VentaMayorCommandHandlers } from './application/commands';
@@ -16,9 +17,11 @@ import { VentaMayorQueryHandlers } from './application/queries';
 import { VentaMayorEventHandlers } from './application/events';
 
 // Related modules
-import { LotesModule, UsuariosModule } from '@/modules';
+import { LotesModule } from '../lotes/lotes.module';
+import { UsuariosModule } from '../usuarios/usuarios.module';
 import { CuadresMayorModule } from '../cuadres-mayor/cuadres-mayor.module';
-import { CuadresModule } from '@modules/cuadres';
+import { CuadresModule } from '../cuadres/cuadres.module';
+
 
 @Module({
   imports: [

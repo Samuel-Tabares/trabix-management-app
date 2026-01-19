@@ -15,7 +15,12 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { AuthService, Public, JwtAuthGuard, CurrentUser, AuthenticatedUser, } from '@/modules';
+import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from './services/auth.service';
+import { AuthenticatedUser, } from './decorators/current-user.decorator';
+
 import {
   LoginDto,
   RefreshTokenDto,
@@ -24,10 +29,11 @@ import {
   MessageResponseDto,
 } from './dto';
 
+
 /**
  * Controlador de autenticación
  * Según sección 20.2 del documento
- * 
+ *
  * Endpoints:
  * - POST /login - Iniciar sesión
  * - POST /refresh - Renovar access token

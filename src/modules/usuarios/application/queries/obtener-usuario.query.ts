@@ -1,11 +1,8 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
-import {Rol } from '@prisma/client';
-import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+import { Rol } from '@prisma/client';
+import { IUsuarioRepository, USUARIO_REPOSITORY } from '../../../../domain/repositories';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto';
 
 /**

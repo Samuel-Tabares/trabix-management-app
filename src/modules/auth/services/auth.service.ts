@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '@/infrastructure';
-import { TokenBlacklistService } from '@/modules';
+import { TokenBlacklistService } from './token-blacklist.service';
 import { LoginDto, ChangePasswordDto, AuthResponseDto, UserResponseDto } from '../dto';
 import { Usuario, Rol } from '@prisma/client';
 

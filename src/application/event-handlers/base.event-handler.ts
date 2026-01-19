@@ -41,7 +41,7 @@ export abstract class BaseEventHandler<TEvent extends IDomainEvent>
   protected abstract processEvent(event: TEvent): Promise<void>;
 
   /**
-   * Método principal que procesa el evento con logging y manejo de errores
+   * Métoddo principal que procesa el evento con logging y manejo de errores
    */
   async handle(event: TEvent): Promise<void> {
     const startTime = Date.now();

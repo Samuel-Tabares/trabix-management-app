@@ -2,7 +2,7 @@ import { Injectable, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { IS_PUBLIC_KEY } from '@/modules';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 /**
  * Guard de autenticación JWT

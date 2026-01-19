@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Tanda } from '@prisma/client';
+import {EstadoTanda, Tanda} from '@prisma/client';
 import { PrismaService } from '@/infrastructure';
 import { ITandaRepository } from '@/modules';
 
@@ -27,7 +27,7 @@ export class PrismaTandaRepository implements ITandaRepository {
     return this.prisma.tanda.findFirst({
       where: {
         loteId,
-        estado: 'EN_CASA',
+          estado: EstadoTanda.EN_CASA,
         stockActual: { gt: 0 },
       },
       orderBy: { numero: 'asc' },
@@ -73,7 +73,7 @@ export class PrismaTandaRepository implements ITandaRepository {
     return this.prisma.tanda.update({
       where: { id },
       data: {
-        estado: 'EN_CASA',
+          estado: EstadoTanda.EN_CASA,
         fechaEnCasa: new Date(),
         version: { increment: 1 },
       },

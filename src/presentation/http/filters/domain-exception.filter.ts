@@ -5,9 +5,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import {Response } from 'express';
-import { DomainException } from '@/domain';
-import { ErrorResponse } from '@/presentation';
+import { Response } from 'express';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
+import { ErrorResponse } from './http-exception.filter';
 
 /**
  * Filtro para excepciones de dominio

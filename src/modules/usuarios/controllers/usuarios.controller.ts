@@ -21,23 +21,29 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 // DTOs
-import {CurrentUser, AuthenticatedUser, Roles,
-  CreateUsuarioDto,
-  UpdateUsuarioDto,
-  CambiarEstadoDto,
-  QueryUsuariosDto,
-  UsuarioResponseDto,
-  UsuariosPaginadosDto,
-  UsuarioJerarquiaDto,
+import { CurrentUser, AuthenticatedUser, Roles } from '../../auth/decorators';
+import {
+    CreateUsuarioDto,
+    UpdateUsuarioDto,
+    CambiarEstadoDto,
+    QueryUsuariosDto,
+    UsuarioResponseDto,
+    UsuariosPaginadosDto,
+    UsuarioJerarquiaDto,
+} from '../application/dto';
+import {
     CrearUsuarioCommand,
     ActualizarUsuarioCommand,
     CambiarEstadoCommand,
     EliminarUsuarioCommand,
-        ObtenerUsuarioQuery,
-        ListarUsuariosQuery,
-        ObtenerJerarquiaQuery,
-        ObtenerPerfilQuery,
-} from '@/modules';
+} from '../application/commands';
+import {
+    ObtenerUsuarioQuery,
+    ListarUsuariosQuery,
+    ObtenerJerarquiaQuery,
+    ObtenerPerfilQuery,
+} from '../application/queries';
+
 
 
 /**

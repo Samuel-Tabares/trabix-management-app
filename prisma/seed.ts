@@ -1,6 +1,7 @@
 // ===========================================
 // TRABIX Backend - Prisma Seed
 // Según secciones 27.1 y 27.2 del documento
+//para resetear bd: npx prisma migrate reset
 // ===========================================
 
 import { PrismaClient } from '@prisma/client';
@@ -43,7 +44,7 @@ async function main() {
     { clave: 'PRECIO_MAYOR_20_SIN_LICOR', valor: '4800', tipo: 'DECIMAL', descripcion: 'Precio mayor >20 sin licor', categoria: 'PRECIOS' },
     { clave: 'PRECIO_MAYOR_50_SIN_LICOR', valor: '4500', tipo: 'DECIMAL', descripcion: 'Precio mayor >50 sin licor', categoria: 'PRECIOS' },
     { clave: 'PRECIO_MAYOR_100_SIN_LICOR', valor: '4200', tipo: 'DECIMAL', descripcion: 'Precio mayor >100 sin licor', categoria: 'PRECIOS' },
-    
+
     // PORCENTAJES
     { clave: 'APORTE_FONDO', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX', categoria: 'PORCENTAJES' },
     { clave: 'PORCENTAJE_VENDEDOR_60_40', valor: '60', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 60/40', categoria: 'PORCENTAJES' },
@@ -95,14 +96,34 @@ async function main() {
       estado: 'ACTIVO',
     },
   });
+    const tiposInsumoObligatorios = [
+        { nombre: 'Granizado', esObligatorio: true },
+        { nombre: 'Pitillos', esObligatorio: true },
+        { nombre: 'Etiquetas', esObligatorio: true },
+        { nombre: 'Tablas nutricionales', esObligatorio: true },
+        { nombre: 'Envío', esObligatorio: true },
+    ];
+    async function seedTiposInsumo() {
+        console.log('📦 Seeding tipos de insumo...');
 
+        for (const tipo of tiposInsumoObligatorios) {
+            await prisma.tipoInsumo.upsert({
+                where: { nombre: tipo.nombre },
+                update: {},
+                create: tipo,
+            });
+        }
+
+        console.log(`✅ ${tiposInsumoObligatorios.length} tipos de insumo obligatorios creados`);
+    }
+    await seedTiposInsumo();
   // 4. Crear registro de stock admin inicial
   console.log('📊 Creando registro de stock admin...');
   const existingStock = await prisma.stockAdmin.findFirst();
   if (!existingStock) {
     await prisma.stockAdmin.create({
       data: {
-        stockFisico: 0,
+        stockFisico: 1000,
       },
     });
   }

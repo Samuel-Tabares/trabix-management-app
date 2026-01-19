@@ -2,14 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { Usuario, EstadoUsuario, Prisma } from '@prisma/client';
 import { PrismaService } from '@/infrastructure';
 import {
-  IUsuarioRepository,
-  FindAllUsuariosOptions,
-  PaginatedUsuarios,
-  CreateUsuarioData,
-  UpdateUsuarioData,
-  CountUsuariosOptions,
-  UsuarioJerarquia,
-} from '@/modules';
+    IUsuarioRepository,
+    FindAllUsuariosOptions,
+    PaginatedUsuarios,
+    CreateUsuarioData,
+    UpdateUsuarioData,
+    CountUsuariosOptions,
+    UsuarioJerarquia,
+} from '../domain/usuario.repository.interface';
+
 
 /**
  * Implementación del repositorio de usuarios con Prisma

@@ -107,7 +107,7 @@ export class TandaAutoTransitJob {
   }
 
   /**
-   * Método para forzar ejecución (testing)
+   * Métoddo para forzar ejecución (testing)
    */
   async forceExecute(): Promise<void> {
     await this.execute();

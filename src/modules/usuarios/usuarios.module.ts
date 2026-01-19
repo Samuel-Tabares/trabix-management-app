@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { ConfigModule } from '@nestjs/config';
 
-import { USUARIO_REPOSITORY,
-    PrismaUsuarioRepository,
-    UsuariosController,
-    UsuarioCommandHandlers,
-    UsuarioQueryHandlers } from '@/modules';
+import { USUARIO_REPOSITORY } from './domain/usuario.repository.interface';
+import { PrismaUsuarioRepository } from './infrastructure/prisma-usuario.repository';
+import { UsuariosController } from './controllers/usuarios.controller';
+import { UsuarioCommandHandlers } from './application/commands';
+import { UsuarioQueryHandlers } from './application/queries';
 
 /**
  * Módulo de Usuarios
