@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IFondoRecompensasRepository,
-  CreateMovimientoData,
-  MovimientoFondo,
-  TipoMovimientoFondo,
+    IFondoRecompensasRepository,
+    CreateMovimientoData,
+    MovimientoFondo,
+    TipoMovimientoFondo,
 } from '../domain';
 
 @Injectable()

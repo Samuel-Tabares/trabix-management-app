@@ -2,12 +2,12 @@ import { CommandHandler, ICommandHandler, ICommand, EventBus } from '@nestjs/cqr
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-    CuadreEntity,
-    CuadreExitosoEvent,
-} from '@modules/cuadres';
-import { DomainException } from '@/domain';
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../domain/cuadre.repository.interface';
+import { CuadreEntity } from '../../domain/cuadre.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { CuadreExitosoEvent } from '../events/cuadre-exitoso.event';
 
 /**
  * Command para confirmar un cuadre como exitoso

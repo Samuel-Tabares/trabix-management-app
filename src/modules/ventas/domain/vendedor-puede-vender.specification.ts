@@ -1,14 +1,18 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Usuario } from '@prisma/client';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-    ITandaRepository,
-    TANDA_REPOSITORY,
     IUsuarioRepository,
     USUARIO_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+} from '../../usuarios/domain/usuario.repository.interface';
+import {
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../lotes/domain/lote.repository.interface';
+import {
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../../lotes/domain/tanda.repository.interface';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**
  * Specification: VendedorPuedeVender

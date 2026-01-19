@@ -2,17 +2,18 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IEquipamientoRepository,
-  EQUIPAMIENTO_REPOSITORY,
+    IEquipamientoRepository,
+    EQUIPAMIENTO_REPOSITORY,
+} from '../../domain/equipamiento.repository.interface';
+import {
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../../usuarios/domain/usuario.repository.interface';
+import {
     EquipamientoEntity,
     EQUIPAMIENTO_CONFIG,
-} from '@modules/equipamiento/domain';
-import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
-
-import { DomainException } from '@/domain';
+} from '../../domain/equipamiento.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 // ========== SolicitarEquipamientoCommand ==========
 

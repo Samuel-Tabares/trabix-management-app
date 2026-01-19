@@ -1,28 +1,29 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Param,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import {
-  QueryCuadresMayorDto,
-  CuadreMayorResponseDto,
-  CuadresMayorPaginadosDto,
+    QueryCuadresMayorDto,
+    CuadreMayorResponseDto,
+    CuadresMayorPaginadosDto,
 } from '../application/dto';
 
 // Commands
@@ -30,10 +31,9 @@ import { ConfirmarCuadreMayorCommand } from '../application/commands';
 
 // Queries
 import {
-  ObtenerCuadreMayorQuery,
-  ListarCuadresMayorQuery,
+    ObtenerCuadreMayorQuery,
+    ListarCuadresMayorQuery,
 } from '../application/queries';
-
 /**
  * Controlador de Cuadres al Mayor
  * Según sección 20.9 del documento

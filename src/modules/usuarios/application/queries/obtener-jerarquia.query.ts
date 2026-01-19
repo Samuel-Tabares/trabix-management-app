@@ -1,11 +1,11 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-  UsuarioJerarquia,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+    UsuarioJerarquia,
+} from '../../domain/usuario.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UsuarioJerarquiaDto, UsuarioBasicoDto } from '../dto';
 
 /**

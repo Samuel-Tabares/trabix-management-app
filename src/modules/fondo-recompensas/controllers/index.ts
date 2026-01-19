@@ -1,29 +1,30 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  HttpCode,
-  HttpStatus,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Query,
+    HttpCode,
+    HttpStatus,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { Decimal } from 'decimal.js';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import {
-  RegistrarSalidaDto,
-  QueryTransaccionesDto,
-  SaldoFondoResponseDto,
-  TransaccionesPaginadasDto,
-  MovimientoFondoResponseDto,
+    RegistrarSalidaDto,
+    QueryTransaccionesDto,
+    SaldoFondoResponseDto,
+    TransaccionesPaginadasDto,
+    MovimientoFondoResponseDto,
 } from '../application/dto';
 
 // Commands
@@ -31,8 +32,8 @@ import { RegistrarSalidaFondoCommand } from '../application/commands';
 
 // Queries
 import {
-  ObtenerSaldoFondoQuery,
-  ListarTransaccionesFondoQuery,
+    ObtenerSaldoFondoQuery,
+    ListarTransaccionesFondoQuery,
 } from '../application/queries';
 
 /**

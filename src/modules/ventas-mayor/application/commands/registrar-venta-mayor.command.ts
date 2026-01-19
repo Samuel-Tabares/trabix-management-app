@@ -2,17 +2,21 @@ import { CommandHandler, ICommandHandler, ICommand, EventBus } from '@nestjs/cqr
 import { Inject, Logger } from '@nestjs/common';
 import { ModalidadVentaMayor } from '@prisma/client';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
+    IVentaMayorRepository,
+    VENTA_MAYOR_REPOSITORY,
+} from '../../domain/venta-mayor.repository.interface';
+import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '@/modules';
-import { VentaMayorEntity,
-    ConsumidorStockMayorService,
-    IVentaMayorRepository,
-    VENTA_MAYOR_REPOSITORY,} from '@modules/ventas-mayor/domain';
-import { DomainException } from '@/domain';
-import { VentaMayorRegistradaEvent } from '@modules/ventas-mayor/application';
+} from '../../../lotes/domain/lote.repository.interface';
+import {
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../../usuarios/domain/usuario.repository.interface';
+import { VentaMayorEntity } from '../../domain/venta-mayor.entity';
+import { ConsumidorStockMayorService } from '../../domain/consumidor-stock-mayor.service';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { VentaMayorRegistradaEvent } from '../events/venta-mayor-registrada.event';
 
 /**
  * Command para registrar una venta al mayor

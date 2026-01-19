@@ -1,33 +1,32 @@
 import {
-  Controller,
-  Get,
-  Query,
+    Controller,
+    Get,
+    Query,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiQuery,
 } from '@nestjs/swagger';
 import { QueryBus } from '@nestjs/cqrs';
-import { Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 // DTOs
 import {
-  ResumenDashboardDto,
-  VentasPeriodoDto,
-  CuadrePendienteResumenDto,
+    ResumenDashboardDto,
+    VentasPeriodoDto,
+    CuadrePendienteResumenDto,
 } from '../application/dto';
 
 // Queries
 import {
-  ResumenDashboardQuery,
-  VentasPeriodoQuery,
-  VendedoresActivosQuery,
-  CuadresPendientesQuery,
+    ResumenDashboardQuery,
+    VentasPeriodoQuery,
+    VendedoresActivosQuery,
+    CuadresPendientesQuery,
 } from '../application/queries';
-
 /**
  * Controller de Dashboard Admin
  * Según sección 20.19 del documento

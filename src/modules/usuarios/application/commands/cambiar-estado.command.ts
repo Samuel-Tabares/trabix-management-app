@@ -2,11 +2,11 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Usuario, EstadoUsuario } from '@prisma/client';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-    UsuarioEntity,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../domain/usuario.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { UsuarioEntity } from '../../domain/usuario.entity';
 
 /**
  * Command para cambiar el estado de un usuario

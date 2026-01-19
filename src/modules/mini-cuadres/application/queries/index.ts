@@ -1,10 +1,10 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  IMiniCuadreRepository,
-  MINI_CUADRE_REPOSITORY,
-} from '@modules/mini-cuadres/domain';
-import { DomainException } from '@/domain';
+    IMiniCuadreRepository,
+    MINI_CUADRE_REPOSITORY,
+} from '../../domain/mini-cuadre.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { MiniCuadreResponseDto } from '../dto';
 
 // ========== ObtenerMiniCuadrePorLoteQuery ==========

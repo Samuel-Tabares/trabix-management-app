@@ -1,21 +1,22 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Param,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import { MiniCuadreResponseDto } from '../application/dto';
@@ -25,8 +26,8 @@ import { ConfirmarMiniCuadreCommand } from '../application/commands';
 
 // Queries
 import {
-  ObtenerMiniCuadrePorLoteQuery,
-  ObtenerMiniCuadreQuery,
+    ObtenerMiniCuadrePorLoteQuery,
+    ObtenerMiniCuadreQuery,
 } from '../application/queries';
 
 /**

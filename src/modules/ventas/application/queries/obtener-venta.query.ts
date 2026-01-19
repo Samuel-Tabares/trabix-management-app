@@ -1,12 +1,12 @@
-import {QueryHandler, IQueryHandler, IQuery} from '@nestjs/cqrs';
-import {Inject} from '@nestjs/common';
+import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
+import { Inject } from '@nestjs/common';
 import {
     IVentaRepository,
     VENTA_REPOSITORY,
-    TRABIX_POR_TIPO
-} from '@modules/ventas';
-import {DomainException} from '@/domain';
-import {VentaResponseDto, DetalleVentaResponseDto} from '../dto';
+} from '../../domain/venta.repository.interface';
+import { TRABIX_POR_TIPO } from '../../domain/venta.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { VentaResponseDto, DetalleVentaResponseDto } from '../dto';
 
 /**
  * Query para obtener una venta por ID

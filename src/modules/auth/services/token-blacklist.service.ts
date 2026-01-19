@@ -1,5 +1,5 @@
-import {Injectable, Logger} from '@nestjs/common';
-import {RedisService} from '@/infrastructure';
+import { Injectable, Logger } from '@nestjs/common';
+import { RedisService } from '../../../infrastructure/cache/redis.service';
 
 /**
  * Servicio para gestionar token blacklist

@@ -2,15 +2,15 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IEquipamientoRepository,
-  EQUIPAMIENTO_REPOSITORY,
-    EquipamientoEntity,
-} from '@modules/equipamiento/domain';
-import { DomainException } from '@/domain';
+    IEquipamientoRepository,
+    EQUIPAMIENTO_REPOSITORY,
+} from '../../domain/equipamiento.repository.interface';
+import { EquipamientoEntity } from '../../domain/equipamiento.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import {
-  QueryEquipamientosDto,
-  EquipamientoResponseDto,
-  EquipamientosPaginadosDto,
+    QueryEquipamientosDto,
+    EquipamientoResponseDto,
+    EquipamientosPaginadosDto,
 } from '../dto';
 
 // ========== ObtenerEquipamientoQuery ==========

@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ModeloNegocio } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import {
-  EvaluacionFinanciera,
-  GananciaReclutadorMayor,
+    EvaluacionFinanciera,
+    GananciaReclutadorMayor,
 } from './cuadre-mayor.entity';
 import {
-  CalculadoraGananciasService,
-  JerarquiaReclutador,
-} from '@modules/cuadres';
+    CalculadoraGananciasService,
+    JerarquiaReclutador,
+} from '../../cuadres/domain/calculadora-ganancias.service';
 
 /**
  * Información de lote para evaluación financiera

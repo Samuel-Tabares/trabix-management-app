@@ -1,14 +1,14 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-} from '@modules/cuadres';
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../domain/cuadre.repository.interface';
 import {
-  QueryCuadresDto,
-  CuadresPaginadosDto,
-  CuadreResponseDto,
-  TandaCuadreResponseDto,
+    QueryCuadresDto,
+    CuadresPaginadosDto,
+    CuadreResponseDto,
+    TandaCuadreResponseDto,
 } from '../dto';
 
 /**

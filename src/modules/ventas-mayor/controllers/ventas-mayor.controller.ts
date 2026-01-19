@@ -1,44 +1,45 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import {
-  RegistrarVentaMayorDto,
-  QueryVentasMayorDto,
-  VentaMayorResponseDto,
-  VentasMayorPaginadasDto,
-  StockDisponibleResponseDto,
+    RegistrarVentaMayorDto,
+    QueryVentasMayorDto,
+    VentaMayorResponseDto,
+    VentasMayorPaginadasDto,
+    StockDisponibleResponseDto,
 } from '../application/dto';
 
 // Commands
 import {
-  RegistrarVentaMayorCommand,
-  CompletarVentaMayorCommand,
+    RegistrarVentaMayorCommand,
+    CompletarVentaMayorCommand,
 } from '../application/commands';
 
 // Queries
 import {
-  ObtenerVentaMayorQuery,
-  ListarVentasMayorQuery,
-  CalcularStockDisponibleQuery,
+    ObtenerVentaMayorQuery,
+    ListarVentasMayorQuery,
+    CalcularStockDisponibleQuery,
 } from '../application/queries';
 
 /**

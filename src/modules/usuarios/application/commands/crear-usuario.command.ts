@@ -4,10 +4,10 @@ import { Usuario } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../domain/usuario.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CreateUsuarioDto } from '../dto';
 
 /**

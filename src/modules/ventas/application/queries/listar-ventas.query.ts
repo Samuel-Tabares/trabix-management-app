@@ -1,10 +1,10 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  IVentaRepository,
-  VENTA_REPOSITORY,
-    TRABIX_POR_TIPO,
-} from '@modules/ventas';
+    IVentaRepository,
+    VENTA_REPOSITORY,
+} from '../../domain/venta.repository.interface';
+import { TRABIX_POR_TIPO } from '../../domain/venta.entity';
 import { QueryVentasDto, VentasPaginadasDto, VentaResponseDto, DetalleVentaResponseDto } from '../dto';
 
 /**

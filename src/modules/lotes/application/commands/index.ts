@@ -1,7 +1,8 @@
 export * from './crear-lote.command';
 export * from './activar-lote.command';
 
-import { CrearLoteHandler,ActivarLoteHandler } from '@/modules';
+import { CrearLoteHandler } from './crear-lote.command';
+import { ActivarLoteHandler } from './activar-lote.command';
 
 /**
  * Array de todos los command handlers del módulo lotes

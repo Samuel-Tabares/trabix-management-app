@@ -2,10 +2,10 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Usuario } from '@prisma/client';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../domain/usuario.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UpdateUsuarioDto } from '../dto';
 
 /**

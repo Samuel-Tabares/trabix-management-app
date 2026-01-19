@@ -2,14 +2,14 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../domain/usuario.repository.interface';
 import {
-  QueryUsuariosDto,
-  UsuarioResponseDto,
-  UsuariosPaginadosDto,
-  UsuarioBasicoDto,
+    QueryUsuariosDto,
+    UsuarioResponseDto,
+    UsuariosPaginadosDto,
+    UsuarioBasicoDto,
 } from '../dto';
 
 /**

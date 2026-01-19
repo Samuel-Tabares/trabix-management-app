@@ -1,9 +1,9 @@
 import { CuadreMayor, EstadoCuadre, ModalidadVentaMayor } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import {
-  EvaluacionFinanciera,
-  TandaAfectada,
-  GananciaReclutadorMayor,
+    EvaluacionFinanciera,
+    TandaAfectada,
+    GananciaReclutadorMayor,
 } from './cuadre-mayor.entity';
 
 /**

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import {
-  HealthIndicator,
-  HealthIndicatorResult,
-  HealthCheckError,
+    HealthIndicator,
+    HealthIndicatorResult,
+    HealthCheckError,
 } from '@nestjs/terminus';
-import { RedisService } from '@/infrastructure';
+import { RedisService } from '../../infrastructure/cache/redis.service';
 
 /**
  * Indicador de salud para Redis

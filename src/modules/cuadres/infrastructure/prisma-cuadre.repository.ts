@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Cuadre, Prisma } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  ICuadreRepository,
-  CuadreConTanda,
-  FindCuadresOptions,
-  PaginatedCuadres,
-  CreateCuadreData,
-  CountCuadresOptions,
-} from '@modules/cuadres';
+    ICuadreRepository,
+    CuadreConTanda,
+    FindCuadresOptions,
+    PaginatedCuadres,
+    CreateCuadreData,
+    CountCuadresOptions,
+} from '../domain/cuadre.repository.interface';
 
 /**
  * Implementación del repositorio de cuadres con Prisma

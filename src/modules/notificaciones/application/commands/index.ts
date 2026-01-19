@@ -2,14 +2,14 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { TipoNotificacion, CanalNotificacion } from '@prisma/client';
 import {
-  INotificacionRepository,
-  NOTIFICACION_REPOSITORY,
-} from '@modules/notificaciones/domain';
+    INotificacionRepository,
+    NOTIFICACION_REPOSITORY,
+} from '../../domain/notificacion.entity';
 import {
-  NotificationContentFactory,
-  NotificationDispatcher,
+    NotificationContentFactory,
+    NotificationDispatcher,
 } from '../../factories';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 // ========== EnviarNotificacionCommand ==========
 

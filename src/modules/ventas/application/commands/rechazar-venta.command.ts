@@ -1,15 +1,15 @@
 import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  IVentaRepository,
-  VENTA_REPOSITORY,
-    VentaEntity,
-} from '@modules/ventas';
+    IVentaRepository,
+    VENTA_REPOSITORY,
+} from '../../domain/venta.repository.interface';
 import {
-  ITandaRepository,
-  TANDA_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../../../lotes/domain/tanda.repository.interface';
+import { VentaEntity } from '../../domain/venta.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 /**
  * Command para rechazar una venta

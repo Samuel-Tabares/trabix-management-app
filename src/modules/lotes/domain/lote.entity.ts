@@ -1,6 +1,6 @@
 import { EstadoLote, ModeloNegocio } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**
  * Entidad de dominio Lote

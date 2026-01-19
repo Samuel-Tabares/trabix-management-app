@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { VentaMayor, Prisma } from '@prisma/client';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IVentaMayorRepository,
-  VentaMayorConRelaciones,
-  FindVentasMayorOptions,
-  PaginatedVentasMayor,
-  CreateVentaMayorData,
-} from '@modules/ventas-mayor/domain';
+    IVentaMayorRepository,
+    VentaMayorConRelaciones,
+    FindVentasMayorOptions,
+    PaginatedVentasMayor,
+    CreateVentaMayorData,
+} from '../domain/venta-mayor.repository.interface';
 
 /**
  * Implementación del repositorio de ventas al mayor con Prisma

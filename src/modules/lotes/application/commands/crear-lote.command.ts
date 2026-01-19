@@ -2,15 +2,17 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {ModeloNegocio } from '@prisma/client';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-  LoteConTandas,
+    ILoteRepository,
+    LOTE_REPOSITORY,
+    LoteConTandas,
+} from '../../domain/lote.repository.interface';
+import {
     IUsuarioRepository,
     USUARIO_REPOSITORY,
-    CalculadoraTandasService,
-    CalculadoraInversionService,
-} from '@/modules';
-import { DomainException } from '@/domain';
+} from '../../../usuarios/domain/usuario.repository.interface';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
+import { CalculadoraTandasService } from '../../domain/calculadora-tandas.service';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CreateLoteDto } from '../dto';
 
 /**

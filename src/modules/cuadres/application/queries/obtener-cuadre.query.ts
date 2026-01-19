@@ -1,10 +1,10 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-} from '@modules/cuadres';
-import { DomainException } from '@/domain';
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../domain/cuadre.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CuadreResponseDto, TandaCuadreResponseDto } from '../dto';
 
 /**

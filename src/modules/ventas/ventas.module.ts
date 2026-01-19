@@ -3,9 +3,9 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Domain
 import {
-  VENTA_REPOSITORY,
-  VendedorPuedeVenderSpecification,
-  RegaloPermitidoSpecification,
+    VENTA_REPOSITORY,
+    VendedorPuedeVenderSpecification,
+    RegaloPermitidoSpecification,
 } from './domain';
 
 // Infrastructure
@@ -20,8 +20,9 @@ import { VentaEventHandlers } from './application/events';
 import { VentasController } from './controllers';
 
 // Módulos necesarios
-import { LotesModule, UsuariosModule } from '@/modules';
-import { CuadresModule } from '@modules/cuadres';
+import { UsuariosModule } from '../usuarios/usuarios.module';
+import { LotesModule } from '../lotes/lotes.module';
+import { CuadresModule } from '../cuadres/cuadres.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 
 /**

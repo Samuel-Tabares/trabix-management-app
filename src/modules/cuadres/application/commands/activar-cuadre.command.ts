@@ -1,12 +1,12 @@
 import { CommandHandler, ICommandHandler, ICommand, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-    CuadreEntity,
-} from '@modules/cuadres';
-import { DomainException } from '@/domain';
-import { EnviarNotificacionCommand } from '@modules/notificaciones/application';
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../domain/cuadre.repository.interface';
+import { CuadreEntity } from '../../domain/cuadre.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Command para activar un cuadre (INACTIVO → PENDIENTE)

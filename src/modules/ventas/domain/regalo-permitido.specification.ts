@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 import {
-  IVentaRepository,
-  VENTA_REPOSITORY,
-} from '@modules/ventas';
+    IVentaRepository,
+    VENTA_REPOSITORY,
+} from './venta.repository.interface';
 
 /**
  * Specification: RegaloPermitido

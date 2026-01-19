@@ -1,20 +1,20 @@
 import { CommandHandler, ICommandHandler, ICommand, EventBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  IMiniCuadreRepository,
-  MINI_CUADRE_REPOSITORY,
-    MiniCuadreEntity,
-} from '@modules/mini-cuadres/domain';
-
+    IMiniCuadreRepository,
+    MINI_CUADRE_REPOSITORY,
+} from '../../domain/mini-cuadre.repository.interface';
 import {
-  ITandaRepository,
-  TANDA_REPOSITORY,
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
-import { MiniCuadreExitosoEvent } from '@modules/mini-cuadres/application';
-
+} from '../../../lotes/domain/lote.repository.interface';
+import {
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../../../lotes/domain/tanda.repository.interface';
+import { MiniCuadreEntity } from '../../domain/mini-cuadre.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { MiniCuadreExitosoEvent } from '../events/mini-cuadre-exitoso.event';
 /**
  * Command para confirmar un mini-cuadre
  */

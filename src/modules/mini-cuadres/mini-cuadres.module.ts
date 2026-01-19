@@ -2,14 +2,14 @@ import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
-import { MiniCuadresController } from '@modules/mini-cuadres/controllers';
+import { MiniCuadresController } from './controllers/mini-cuadres.controller';
 
 // Domain
 import { CierreLoteService } from './domain/cierre-lote.service';
-import { MINI_CUADRE_REPOSITORY } from '@modules/mini-cuadres/domain';
+import { MINI_CUADRE_REPOSITORY } from './domain/mini-cuadre.repository.interface';
 
 // Infrastructure
-import { PrismaMiniCuadreRepository } from '@modules/mini-cuadres/infrastructure';
+import { PrismaMiniCuadreRepository } from './infrastructure/prisma-mini-cuadre.repository';
 
 // Application
 import { MiniCuadreCommandHandlers } from './application/commands';
@@ -17,7 +17,7 @@ import { MiniCuadreQueryHandlers } from './application/queries';
 import { MiniCuadreEventHandlers } from './application/events';
 
 // Related modules
-import { LotesModule } from '@/modules';
+import { LotesModule } from '../lotes/lotes.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 
 /**

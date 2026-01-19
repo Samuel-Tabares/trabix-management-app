@@ -3,10 +3,10 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Domain
 import {
-  CUADRE_REPOSITORY,
-  CalculadoraGananciasService,
-  Modelo6040Strategy,
-  Modelo5050CascadaStrategy,
+    CUADRE_REPOSITORY,
+    CalculadoraGananciasService,
+    Modelo6040Strategy,
+    Modelo5050CascadaStrategy,
 } from './domain';
 
 // Infrastructure
@@ -21,9 +21,8 @@ import { CuadreEventHandlers } from './application/events';
 import { CuadresController } from './controllers';
 
 // Módulos necesarios
-import { LotesModule } from '@/modules';
+import { LotesModule } from '../lotes/lotes.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
-
 /**
  * Módulo de Cuadres
  * Según sección 8 del documento

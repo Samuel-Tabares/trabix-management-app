@@ -1,49 +1,50 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  Body,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Param,
+    Body,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import {
-  SolicitarEquipamientoDto,
-  ReportarDanoDto,
-  QueryEquipamientosDto,
-  EquipamientoResponseDto,
-  EquipamientosPaginadosDto,
+    SolicitarEquipamientoDto,
+    ReportarDanoDto,
+    QueryEquipamientosDto,
+    EquipamientoResponseDto,
+    EquipamientosPaginadosDto,
 } from '../application/dto';
 
 // Commands
 import {
-  SolicitarEquipamientoCommand,
-  ActivarEquipamientoCommand,
-  PagarMensualidadCommand,
-  ReportarDanoCommand,
-  ReportarPerdidaCommand,
-  PagarDanoCommand,
-  DevolverEquipamientoCommand,
+    SolicitarEquipamientoCommand,
+    ActivarEquipamientoCommand,
+    PagarMensualidadCommand,
+    ReportarDanoCommand,
+    ReportarPerdidaCommand,
+    PagarDanoCommand,
+    DevolverEquipamientoCommand,
 } from '../application/commands';
 
 // Queries
 import {
-  ObtenerEquipamientoQuery,
-  ObtenerMiEquipamientoQuery,
-  ListarEquipamientosQuery,
+    ObtenerEquipamientoQuery,
+    ObtenerMiEquipamientoQuery,
+    ListarEquipamientosQuery,
 } from '../application/queries';
 
 /**

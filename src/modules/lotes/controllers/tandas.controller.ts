@@ -1,28 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
-    Inject,
+    Controller,
+    Get,
+    Post,
+    Param,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
+import { Inject } from '@nestjs/common';
+import { Roles } from '../../auth/decorators/roles.decorator';
 import {
-  ITandaRepository,
-  TANDA_REPOSITORY,
-    TandaResponseDto,
-    TandaEntity,
-    Roles,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../domain/tanda.repository.interface';
+import { TandaEntity } from '../domain/tanda.entity';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
+import { TandaResponseDto } from '../application/dto';
 
 /**
  * Controlador de Tandas

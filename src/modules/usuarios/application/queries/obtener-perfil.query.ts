@@ -2,11 +2,14 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
-import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto';
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../domain/usuario.repository.interface';
+import {
+    UsuarioResponseDto,
+    UsuarioBasicoDto,
+} from '../dto';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 /**
  * Query para obtener el perfil propio del usuario autenticado

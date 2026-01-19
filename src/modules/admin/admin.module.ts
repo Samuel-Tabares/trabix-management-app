@@ -3,27 +3,27 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
 import {
-  StockAdminController,
-  PedidosStockController,
-  ConfiguracionesController,
-  TiposInsumoController,
-  DashboardController,
+    StockAdminController,
+    PedidosStockController,
+    ConfiguracionesController,
+    TiposInsumoController,
+    DashboardController,
 } from './controllers';
 
 // Domain
 import {
-  PEDIDO_STOCK_REPOSITORY,
-  CONFIGURACION_REPOSITORY,
-  TIPO_INSUMO_REPOSITORY,
-  STOCK_ADMIN_REPOSITORY,
+    PEDIDO_STOCK_REPOSITORY,
+    CONFIGURACION_REPOSITORY,
+    TIPO_INSUMO_REPOSITORY,
+    STOCK_ADMIN_REPOSITORY,
 } from './domain/repositories';
 
 // Infrastructure
 import {
-  PrismaPedidoStockRepository,
-  PrismaConfiguracionRepository,
-  PrismaTipoInsumoRepository,
-  PrismaStockAdminRepository,
+    PrismaPedidoStockRepository,
+    PrismaConfiguracionRepository,
+    PrismaTipoInsumoRepository,
+    PrismaStockAdminRepository,
 } from './infrastructure';
 
 // Application

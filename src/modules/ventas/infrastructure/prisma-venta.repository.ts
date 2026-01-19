@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '@/infrastructure';
+import {Prisma } from '@prisma/client';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IVentaRepository,
-  VentaConDetalles,
-  FindVentasOptions,
-  PaginatedVentas,
-  CreateVentaData,
-  CountVentasOptions,
-} from '@modules/ventas';
+    IVentaRepository,
+    VentaConDetalles,
+    FindVentasOptions,
+    PaginatedVentas,
+    CreateVentaData,
+    CountVentasOptions,
+} from '../domain/venta.repository.interface';
 
 /**
  * Implementación del repositorio de ventas con Prisma

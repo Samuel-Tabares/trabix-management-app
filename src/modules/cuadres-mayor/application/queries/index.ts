@@ -1,14 +1,14 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  ICuadreMayorRepository,
-  CUADRE_MAYOR_REPOSITORY,
-} from '@modules/cuadres-mayor/domain';
-import { DomainException } from '@/domain';
+    ICuadreMayorRepository,
+    CUADRE_MAYOR_REPOSITORY,
+} from '../../domain/cuadre-mayor.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import {
-  QueryCuadresMayorDto,
-  CuadreMayorResponseDto,
-  CuadresMayorPaginadosDto,
+    QueryCuadresMayorDto,
+    CuadreMayorResponseDto,
+    CuadresMayorPaginadosDto,
 } from '../dto';
 
 // ========== ObtenerCuadreMayorQuery ==========

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Equipamiento } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IEquipamientoRepository,
-  CreateEquipamientoData,
-  FindEquipamientosOptions,
-  PaginatedEquipamientos,
-} from '@modules/equipamiento/domain';
+    IEquipamientoRepository,
+    CreateEquipamientoData,
+    FindEquipamientosOptions,
+    PaginatedEquipamientos,
+} from '../domain/equipamiento.repository.interface';
 
 @Injectable()
 export class PrismaEquipamientoRepository implements IEquipamientoRepository {

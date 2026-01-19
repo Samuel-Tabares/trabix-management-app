@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import { EstadoPedidoStock, PedidoStock, DetalleCostoPedido, ConfiguracionSistema, HistorialConfiguracion, TipoInsumo, StockAdmin } from '@prisma/client';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IPedidoStockRepository,
-  CreatePedidoStockData,
-  CreateDetalleCostoData,
-  PedidoStockWithDetalles,
-  IConfiguracionRepository,
-  ITipoInsumoRepository,
-  CreateTipoInsumoData,
-  IStockAdminRepository,
-} from '@modules/admin/domain';
+    IPedidoStockRepository,
+    CreatePedidoStockData,
+    CreateDetalleCostoData,
+    PedidoStockWithDetalles,
+    IConfiguracionRepository,
+    ITipoInsumoRepository,
+    CreateTipoInsumoData,
+    IStockAdminRepository,
+} from '../domain/repositories';
 
 // ========== PedidoStock Repository ==========
 

@@ -1,7 +1,7 @@
 export * from './cuadre-exitoso.event';
 export * from './cuadre-exitoso.handler';
 
-import { CuadreExitosoHandler } from '@modules/cuadres';
+import { CuadreExitosoHandler } from './cuadre-exitoso.handler';
 
 /**
  * Array de todos los event handlers del módulo cuadres

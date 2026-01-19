@@ -1,7 +1,8 @@
 export * from './obtener-cuadre.query';
 export * from './listar-cuadres.query';
 
-import { ObtenerCuadreHandler, ListarCuadresHandler } from '@modules/cuadres';
+import { ObtenerCuadreHandler } from './obtener-cuadre.query';
+import { ListarCuadresHandler } from './listar-cuadres.query';
 
 /**
  * Array de todos los query handlers del módulo cuadres

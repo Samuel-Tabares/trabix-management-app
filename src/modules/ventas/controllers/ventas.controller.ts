@@ -1,36 +1,45 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
-// Commands - queries - dtos
+// DTOs
 import {
-  RegistrarVentaCommand,
-  AprobarVentaCommand,
-  RechazarVentaCommand,
+    CreateVentaDto,
+    QueryVentasDto,
+    VentaResponseDto,
+    VentasPaginadasDto,
+} from '../application/dto';
+
+// Commands
+import {
+    RegistrarVentaCommand,
+    AprobarVentaCommand,
+    RechazarVentaCommand,
+} from '../application/commands';
+
+// Queries
+import {
     ObtenerVentaQuery,
     ListarVentasQuery,
-        CreateVentaDto,
-        QueryVentasDto,
-        VentaResponseDto,
-        VentasPaginadasDto,
-} from '@modules/ventas';
+} from '../application/queries';
 
 /**
  * Controlador de Ventas

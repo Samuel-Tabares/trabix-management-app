@@ -2,26 +2,26 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IPedidoStockRepository,
-  PEDIDO_STOCK_REPOSITORY,
-  IConfiguracionRepository,
-  CONFIGURACION_REPOSITORY,
-  ITipoInsumoRepository,
-  TIPO_INSUMO_REPOSITORY,
-  IStockAdminRepository,
-  STOCK_ADMIN_REPOSITORY,
-} from '@modules/admin/domain';
-import { PrismaService } from '@/infrastructure';
-import { DomainException } from '@/domain';
+    IPedidoStockRepository,
+    PEDIDO_STOCK_REPOSITORY,
+    IConfiguracionRepository,
+    CONFIGURACION_REPOSITORY,
+    ITipoInsumoRepository,
+    TIPO_INSUMO_REPOSITORY,
+    IStockAdminRepository,
+    STOCK_ADMIN_REPOSITORY,
+} from '../../domain/repositories';
+import { PrismaService } from '../../../../infrastructure/database/prisma/prisma.service';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import {
-  PedidoStockResponseDto,
-  ConfiguracionResponseDto,
-  TipoInsumoResponseDto,
-  StockAdminResponseDto,
-  DeficitResponseDto,
-  ResumenDashboardDto,
-  VentasPeriodoDto,
-  CuadrePendienteResumenDto,
+    PedidoStockResponseDto,
+    ConfiguracionResponseDto,
+    TipoInsumoResponseDto,
+    StockAdminResponseDto,
+    DeficitResponseDto,
+    ResumenDashboardDto,
+    VentasPeriodoDto,
+    CuadrePendienteResumenDto,
 } from '../dto';
 
 // ========== ObtenerPedidoStockQuery ==========

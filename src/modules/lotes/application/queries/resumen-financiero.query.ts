@@ -2,11 +2,11 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-    CalculadoraInversionService,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../domain/lote.repository.interface';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { ResumenFinancieroDto } from '../dto';
 
 /**

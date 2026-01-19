@@ -1,23 +1,23 @@
 import { EventsHandler, IEventHandler, CommandBus, EventBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { VentaAprobadaEvent } from '@modules/ventas';
-
+import { VentaAprobadaEvent } from './venta-aprobada.event';
 import {
-  ITandaRepository,
-  TANDA_REPOSITORY,
-    CalculadoraTandasService,
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '@/modules';
-
+} from '../../../lotes/domain/lote.repository.interface';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-    ActivarCuadreCommand
-} from '@modules/cuadres';
-import { StockUltimaTandaAgotadoEvent } from '@modules/mini-cuadres/application';
-import { EnviarNotificacionCommand } from '@modules/notificaciones/application';
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../../../lotes/domain/tanda.repository.interface';
+import { CalculadoraTandasService } from '../../../lotes/domain/calculadora-tandas.service';
+import {
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../../cuadres/domain/cuadre.repository.interface';
+import { ActivarCuadreCommand } from '../../../cuadres/application/commands';
+import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento VentaAprobada

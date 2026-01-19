@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Lote, Prisma } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  ILoteRepository,
-  LoteConTandas,
-  FindLotesOptions,
-  PaginatedLotes,
-  CreateLoteData,
-  CountLotesOptions,
-} from '@/modules';
+    ILoteRepository,
+    LoteConTandas,
+    FindLotesOptions,
+    PaginatedLotes,
+    CreateLoteData,
+    CountLotesOptions,
+} from '../domain/lote.repository.interface';
 
 /**
  * Implementación del repositorio de lotes con Prisma

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { MiniCuadre, EstadoMiniCuadre } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  IMiniCuadreRepository,
-  MiniCuadreConRelaciones,
-  CreateMiniCuadreData,
-} from '@modules/mini-cuadres/domain';
+    IMiniCuadreRepository,
+    MiniCuadreConRelaciones,
+    CreateMiniCuadreData,
+} from '../domain/mini-cuadre.repository.interface';
 
 /**
  * Implementación del repositorio de mini-cuadres con Prisma

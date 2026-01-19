@@ -1,15 +1,15 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  ForbiddenException,
-  Logger,
-  BadRequestException,
+    Injectable,
+    UnauthorizedException,
+    ForbiddenException,
+    Logger,
+    BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
 import { LoginDto, ChangePasswordDto, AuthResponseDto, UserResponseDto } from '../dto';
 import { Usuario, Rol } from '@prisma/client';

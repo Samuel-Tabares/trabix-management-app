@@ -1,13 +1,13 @@
 import { CommandHandler, ICommandHandler, ICommand, EventBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-  LoteConTandas,
-    LoteActivadoEvent,
-    LoteEntity,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+    LoteConTandas,
+} from '../../domain/lote.repository.interface';
+import { LoteEntity } from '../../domain/lote.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { LoteActivadoEvent } from '../events/lote-activado.event';
 
 /**
  * Command para activar un lote

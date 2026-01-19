@@ -1,11 +1,11 @@
 import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  IVentaMayorRepository,
-  VENTA_MAYOR_REPOSITORY,
-    VentaMayorEntity,
-} from '@modules/ventas-mayor/domain';
-import { DomainException } from '@/domain';
+    IVentaMayorRepository,
+    VENTA_MAYOR_REPOSITORY,
+} from '../../domain/venta-mayor.repository.interface';
+import { VentaMayorEntity } from '../../domain/venta-mayor.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 /**
  * Command para completar una venta al mayor

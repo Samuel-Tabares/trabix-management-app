@@ -1,7 +1,7 @@
 import { EventsHandler, IEventHandler, CommandBus } from '@nestjs/cqrs';
 import { Logger } from '@nestjs/common';
 import { MiniCuadreExitosoEvent } from './mini-cuadre-exitoso.event';
-import { EnviarNotificacionCommand } from '@modules/notificaciones/application';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento MiniCuadreExitoso

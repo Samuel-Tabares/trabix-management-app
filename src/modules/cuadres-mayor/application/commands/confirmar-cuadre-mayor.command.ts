@@ -1,23 +1,25 @@
 import { CommandHandler, ICommandHandler, ICommand, EventBus, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
-  ICuadreMayorRepository,
-  CUADRE_MAYOR_REPOSITORY,
-} from '@modules/cuadres-mayor/domain';
+    ICuadreMayorRepository,
+    CUADRE_MAYOR_REPOSITORY,
+} from '../../domain/cuadre-mayor.repository.interface';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-} from '@modules/cuadres';
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../../cuadres/domain/cuadre.repository.interface';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../../lotes/domain/lote.repository.interface';
+import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
-import { CuadreMayorExitosoEvent } from '@modules/cuadres-mayor/application';
-import { StockUltimaTandaAgotadoEvent } from '@modules/mini-cuadres/application';
-import { RegistrarEntradaFondoCommand } from '@modules/fondo-recompensas/application';
+} from '../../../lotes/domain/tanda.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { CuadreMayorExitosoEvent } from '../events/cuadre-mayor-exitoso.event';
+import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
+import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
 import { FONDO_CONFIG } from '../../../fondo-recompensas/domain';
 
 /**

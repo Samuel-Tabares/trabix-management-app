@@ -1,6 +1,6 @@
 import { Decimal } from 'decimal.js';
 import { EstadoPedidoStock } from '@prisma/client';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 // ========== PedidoStock Entity ==========
 

@@ -1,53 +1,52 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
-  Body,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Delete,
+    Param,
+    Body,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
 
 // DTOs
 import {
-  CrearPedidoStockDto,
-  AgregarCostoDto,
-  QueryPedidosDto,
-  PedidoStockResponseDto,
-  StockAdminResponseDto,
-  DeficitResponseDto,
+    CrearPedidoStockDto,
+    AgregarCostoDto,
+    QueryPedidosDto,
+    PedidoStockResponseDto,
+    StockAdminResponseDto,
+    DeficitResponseDto,
 } from '../application/dto';
 
 // Commands
 import {
-  CrearPedidoStockCommand,
-  AgregarCostoPedidoCommand,
-  EliminarCostoPedidoCommand,
-  ConfirmarPedidoStockCommand,
-  RecibirPedidoStockCommand,
+    CrearPedidoStockCommand,
+    AgregarCostoPedidoCommand,
+    EliminarCostoPedidoCommand,
+    ConfirmarPedidoStockCommand,
+    RecibirPedidoStockCommand,
 } from '../application/commands';
 
 // Queries
 import {
-  ObtenerPedidoStockQuery,
-  ListarPedidosStockQuery,
-  ObtenerStockAdminQuery,
-  ObtenerDeficitQuery,
-  ObtenerStockReservadoQuery,
+    ObtenerPedidoStockQuery,
+    ListarPedidosStockQuery,
+    ObtenerStockAdminQuery,
+    ObtenerDeficitQuery,
+    ObtenerStockReservadoQuery,
 } from '../application/queries';
-
 /**
  * Controller de Stock Admin
  * Según sección 20.15 del documento

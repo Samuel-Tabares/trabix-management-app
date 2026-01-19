@@ -3,23 +3,24 @@ import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import { VentaMayorRegistradaEvent } from './venta-mayor-registrada.event';
 import {
-  ICuadreMayorRepository,
-  CUADRE_MAYOR_REPOSITORY,
-    EvaluadorFinancieroMayorService,
-} from '@modules/cuadres-mayor/domain';
+    ICuadreMayorRepository,
+    CUADRE_MAYOR_REPOSITORY,
+} from '../../../cuadres-mayor/domain/cuadre-mayor.repository.interface';
 import {
-  IVentaMayorRepository,
-  VENTA_MAYOR_REPOSITORY,
-} from '@modules/ventas-mayor/domain';
-
+    IVentaMayorRepository,
+    VENTA_MAYOR_REPOSITORY,
+} from '../../domain/venta-mayor.repository.interface';
 import {
-  IUsuarioRepository,
-  USUARIO_REPOSITORY,
-    CalculadoraInversionService,
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '@/modules';
-import { JerarquiaReclutador } from '@modules/cuadres';
+} from '../../../lotes/domain/lote.repository.interface';
+import {
+    IUsuarioRepository,
+    USUARIO_REPOSITORY,
+} from '../../../usuarios/domain/usuario.repository.interface';
+import { EvaluadorFinancieroMayorService } from '../../../cuadres-mayor/domain/evaluador-financiero-mayor.service';
+import { CalculadoraInversionService } from '../../../lotes/domain/calculadora-inversion.service';
+import { JerarquiaReclutador } from '../../../cuadres/domain/calculadora-ganancias.service';
 
 /**
  * Handler del evento VentaMayorRegistrada

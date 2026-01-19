@@ -1,14 +1,15 @@
 import { EventsHandler, IEventHandler, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
-import { CuadreExitosoEvent } from '@modules/cuadres';
+import { CuadreExitosoEvent } from './cuadre-exitoso.event';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../../lotes/domain/lote.repository.interface';
+import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '@/modules';
-
-import { EnviarNotificacionCommand } from '@modules/notificaciones/application';
+} from '../../../lotes/domain/tanda.repository.interface';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento CuadreExitoso

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**
  * Configuración del fondo de recompensas

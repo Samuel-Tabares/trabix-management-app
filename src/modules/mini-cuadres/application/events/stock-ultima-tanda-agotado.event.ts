@@ -1,15 +1,16 @@
-import { EventsHandler, IEventHandler, IEvent } from '@nestjs/cqrs';
+import { IEvent } from '@nestjs/cqrs';
+import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IMiniCuadreRepository,
-  MINI_CUADRE_REPOSITORY,
-} from '@modules/mini-cuadres/domain';
+    IMiniCuadreRepository,
+    MINI_CUADRE_REPOSITORY,
+} from '../../domain/mini-cuadre.repository.interface';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-} from '@/modules';
-import { CierreLoteService } from '@modules/mini-cuadres/domain';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../../lotes/domain/lote.repository.interface';
+import { CierreLoteService } from '../../domain/cierre-lote.service';
 
 /**
  * Evento: Stock de Última Tanda Agotado

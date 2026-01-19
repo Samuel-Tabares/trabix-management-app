@@ -2,19 +2,22 @@ import { EventsHandler, IEventHandler, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import { ConceptoCuadre } from '@prisma/client';
-import { CalculadoraInversionService,  ILoteRepository,
-    LOTE_REPOSITORY, LoteActivadoEvent, } from '@/modules';
+import { LoteActivadoEvent } from './lote-activado.event';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
 import {
-  ICuadreRepository,
-  CUADRE_REPOSITORY,
-} from '@modules/cuadres';
-
+    ICuadreRepository,
+    CUADRE_REPOSITORY,
+} from '../../../cuadres/domain/cuadre.repository.interface';
 import {
-  IMiniCuadreRepository,
-  MINI_CUADRE_REPOSITORY,
-} from '@modules/mini-cuadres/domain';
-import { RegistrarEntradaFondoCommand } from '@modules/fondo-recompensas/application';
-import { EnviarNotificacionCommand } from '@modules/notificaciones/application';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../domain/lote.repository.interface';
+import {
+    IMiniCuadreRepository,
+    MINI_CUADRE_REPOSITORY,
+} from '../../../mini-cuadres/domain/mini-cuadre.repository.interface';
+import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento LoteActivado

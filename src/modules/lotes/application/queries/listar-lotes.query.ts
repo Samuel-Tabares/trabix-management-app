@@ -2,9 +2,9 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-} from '@/modules';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../domain/lote.repository.interface';
 import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../dto';
 
 /**

@@ -1,12 +1,12 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  INotificacionRepository,
-  NOTIFICACION_REPOSITORY,
-} from '@modules/notificaciones/domain';
+    INotificacionRepository,
+    NOTIFICACION_REPOSITORY,
+} from '../../domain/notificacion.entity';
 import {
-  QueryNotificacionesDto,
-  NotificacionesPaginadasDto,
+    QueryNotificacionesDto,
+    NotificacionesPaginadasDto,
 } from '../dto';
 
 // ========== ListarMisNotificacionesQuery ==========

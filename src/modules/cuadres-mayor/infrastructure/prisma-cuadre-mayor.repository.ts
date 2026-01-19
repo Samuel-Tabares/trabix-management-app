@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { CuadreMayor, Prisma } from '@prisma/client';
-import { PrismaService } from '@/infrastructure';
+import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-  ICuadreMayorRepository,
-  CuadreMayorConRelaciones,
-  FindCuadresMayorOptions,
-  PaginatedCuadresMayor,
-  CreateCuadreMayorData,
-} from '@modules/cuadres-mayor/domain';
+    ICuadreMayorRepository,
+    CuadreMayorConRelaciones,
+    FindCuadresMayorOptions,
+    PaginatedCuadresMayor,
+    CreateCuadreMayorData,
+} from '../domain/cuadre-mayor.repository.interface';
 
 /**
  * Implementación del repositorio de cuadres al mayor con Prisma

@@ -1,6 +1,6 @@
 import { EstadoVenta, TipoVenta } from '@prisma/client';
 import { Decimal } from 'decimal.js';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**
  * Precios de venta según sección 16.3 del documento

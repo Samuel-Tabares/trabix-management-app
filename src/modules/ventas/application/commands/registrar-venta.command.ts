@@ -2,18 +2,17 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IVentaRepository,
-  VENTA_REPOSITORY,
-  VentaConDetalles,
-    PRECIOS_VENTA, TRABIX_POR_TIPO,
-    RegaloPermitidoSpecification,
-    VendedorPuedeVenderSpecification
-} from '@modules/ventas';
+    IVentaRepository,
+    VENTA_REPOSITORY,
+    VentaConDetalles,
+} from '../../domain/venta.repository.interface';
 import {
-  ITandaRepository,
-  TANDA_REPOSITORY,
-} from '@/modules';
-
+    ITandaRepository,
+    TANDA_REPOSITORY,
+} from '../../../lotes/domain/tanda.repository.interface';
+import { VendedorPuedeVenderSpecification } from '../../domain/vendedor-puede-vender.specification';
+import { RegaloPermitidoSpecification } from '../../domain/regalo-permitido.specification';
+import { PRECIOS_VENTA, TRABIX_POR_TIPO } from '../../domain/venta.entity';
 import { CreateVentaDto } from '../dto';
 import { TipoVenta } from '@prisma/client';
 

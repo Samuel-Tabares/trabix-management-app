@@ -2,22 +2,22 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IPedidoStockRepository,
-  PEDIDO_STOCK_REPOSITORY,
-  IConfiguracionRepository,
-  CONFIGURACION_REPOSITORY,
-  ITipoInsumoRepository,
-  TIPO_INSUMO_REPOSITORY,
-  IStockAdminRepository,
-  STOCK_ADMIN_REPOSITORY,
-} from '@modules/admin/domain';
+    IPedidoStockRepository,
+    PEDIDO_STOCK_REPOSITORY,
+    IConfiguracionRepository,
+    CONFIGURACION_REPOSITORY,
+    ITipoInsumoRepository,
+    TIPO_INSUMO_REPOSITORY,
+    IStockAdminRepository,
+    STOCK_ADMIN_REPOSITORY,
+} from '../../domain/repositories';
 import {
-  PedidoStockEntity,
-  DetalleCostoEntity,
-  ConfiguracionSistemaEntity,
-  TipoInsumoEntity,
+    PedidoStockEntity,
+    DetalleCostoEntity,
+    ConfiguracionSistemaEntity,
+    TipoInsumoEntity,
 } from '../../domain/entities';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 // ========== CrearPedidoStockCommand ==========
 

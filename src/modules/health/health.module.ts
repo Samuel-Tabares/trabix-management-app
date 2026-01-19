@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TerminusModule,PrismaHealthIndicator } from '@nestjs/terminus';
-import { HealthController } from '@/presentation';
-import { RedisHealthIndicator } from '@/modules';
+import { TerminusModule } from '@nestjs/terminus';
+import { PrismaHealthIndicator } from '@nestjs/terminus';
+import { HealthController } from '../../presentation/http/controllers/health.controller';
+import { RedisHealthIndicator } from './redis.health';
 
 /**
  * Módulo de Health Checks

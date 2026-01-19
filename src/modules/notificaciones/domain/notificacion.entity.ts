@@ -1,5 +1,5 @@
 import { TipoNotificacion, CanalNotificacion } from '@prisma/client';
-import { DomainException } from '@/domain';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**
  * Entidad de dominio Notificacion

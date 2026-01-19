@@ -1,33 +1,31 @@
 import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Headers,
+    Controller,
+    Post,
+    Body,
+    HttpCode,
+    HttpStatus,
+    UseGuards,
+    Headers,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiBody,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Public } from './decorators/public.decorator';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthService } from './services/auth.service';
-import { AuthenticatedUser, } from './decorators/current-user.decorator';
-
 import {
-  LoginDto,
-  RefreshTokenDto,
-  ChangePasswordDto,
-  AuthResponseDto,
-  MessageResponseDto,
+    LoginDto,
+    RefreshTokenDto,
+    ChangePasswordDto,
+    AuthResponseDto,
+    MessageResponseDto,
 } from './dto';
+import { Public } from './decorators/public.decorator';
+import { CurrentUser, AuthenticatedUser } from './decorators/current-user.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 
 /**

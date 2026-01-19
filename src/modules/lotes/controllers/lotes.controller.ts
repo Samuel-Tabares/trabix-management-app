@@ -1,45 +1,46 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import {
-    // Auth / User
-    CurrentUser,
-    AuthenticatedUser,
-    Roles,
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
-    // DTOs
+// DTOs
+import {
     CreateLoteDto,
     QueryLotesDto,
     LoteResponseDto,
     LotesPaginadosDto,
     ResumenFinancieroDto,
+} from '../application/dto';
 
-    // Commands
+// Commands
+import {
     CrearLoteCommand,
     ActivarLoteCommand,
+} from '../application/commands';
 
-    // Queries
+// Queries
+import {
     ObtenerLoteQuery,
     ListarLotesQuery,
     ResumenFinancieroQuery,
-} from '@/modules';
-
+} from '../application/queries';
 
 /**
  * Controlador de Lotes

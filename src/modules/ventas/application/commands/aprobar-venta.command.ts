@@ -2,13 +2,13 @@ import { CommandHandler, ICommandHandler, ICommand, EventBus } from '@nestjs/cqr
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
-  IVentaRepository,
-  VENTA_REPOSITORY,
-  VentaConDetalles,
-    VentaAprobadaEvent,
-    VentaEntity,
-} from '@modules/ventas';
-import { DomainException } from '@/domain';
+    IVentaRepository,
+    VENTA_REPOSITORY,
+    VentaConDetalles,
+} from '../../domain/venta.repository.interface';
+import { VentaEntity } from '../../domain/venta.entity';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { VentaAprobadaEvent } from '../events/venta-aprobada.event';
 
 /**
  * Command para aprobar una venta

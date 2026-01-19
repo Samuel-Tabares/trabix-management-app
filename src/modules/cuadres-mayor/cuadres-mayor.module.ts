@@ -2,13 +2,14 @@ import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
-import { CuadresMayorController } from '@modules/cuadres-mayor/controllers';
+import { CuadresMayorController } from './controllers/cuadres-mayor.controller';
 
 // Domain
-import { EvaluadorFinancieroMayorService, CUADRE_MAYOR_REPOSITORY } from '@modules/cuadres-mayor/domain';
+import { EvaluadorFinancieroMayorService } from './domain/evaluador-financiero-mayor.service';
+import { CUADRE_MAYOR_REPOSITORY } from './domain/cuadre-mayor.repository.interface';
 
 // Infrastructure
-import { PrismaCuadreMayorRepository } from '@modules/cuadres-mayor/infrastructure';
+import { PrismaCuadreMayorRepository } from './infrastructure/prisma-cuadre-mayor.repository';
 
 // Application
 import { CuadreMayorCommandHandlers } from './application/commands';
@@ -16,11 +17,11 @@ import { CuadreMayorQueryHandlers } from './application/queries';
 import { CuadreMayorEventHandlers } from './application/events';
 
 // Related modules
-import { LotesModule, UsuariosModule } from '@/modules';
-import { CuadresModule } from '@modules/cuadres';
+import { LotesModule } from '../lotes/lotes.module';
+import { CuadresModule } from '../cuadres/cuadres.module';
+import { UsuariosModule } from '../usuarios/usuarios.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 import { FondoRecompensasModule } from '../fondo-recompensas/fondo-recompensas.module';
-
 @Module({
   imports: [
     CqrsModule,

@@ -1,20 +1,20 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-  IVentaMayorRepository,
-  VENTA_MAYOR_REPOSITORY,
-    ConsumidorStockMayorService,
-} from '@modules/ventas-mayor/domain';
+    IVentaMayorRepository,
+    VENTA_MAYOR_REPOSITORY,
+} from '../../domain/venta-mayor.repository.interface';
 import {
-  ILoteRepository,
-  LOTE_REPOSITORY,
-} from '@/modules';
-import { DomainException } from '@/domain';
+    ILoteRepository,
+    LOTE_REPOSITORY,
+} from '../../../lotes/domain/lote.repository.interface';
+import { ConsumidorStockMayorService } from '../../domain/consumidor-stock-mayor.service';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import {
-  QueryVentasMayorDto,
-  VentaMayorResponseDto,
-  VentasMayorPaginadasDto,
-  StockDisponibleResponseDto,
+    QueryVentasMayorDto,
+    VentaMayorResponseDto,
+    VentasMayorPaginadasDto,
+    StockDisponibleResponseDto,
 } from '../dto';
 
 // ========== ObtenerVentaMayorQuery ==========

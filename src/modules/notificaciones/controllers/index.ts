@@ -1,37 +1,38 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Param,
-  Body,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
+    Controller,
+    Get,
+    Post,
+    Patch,
+    Param,
+    Body,
+    Query,
+    HttpCode,
+    HttpStatus,
+    ParseUUIDPipe,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { CurrentUser, AuthenticatedUser, Roles } from '@/modules';
+import { Roles } from '../../auth/decorators/roles.decorator';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
 import {
-  EnviarNotificacionDto,
-  QueryNotificacionesDto,
-  NotificacionResponseDto,
-  NotificacionesPaginadasDto,
+    EnviarNotificacionDto,
+    QueryNotificacionesDto,
+    NotificacionResponseDto,
+    NotificacionesPaginadasDto,
 } from '../application/dto';
 
 // Commands
 import {
-  EnviarNotificacionCommand,
-  MarcarNotificacionLeidaCommand,
+    EnviarNotificacionCommand,
+    MarcarNotificacionLeidaCommand,
 } from '../application/commands';
 
 // Queries
