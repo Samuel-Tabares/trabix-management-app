@@ -1,11 +1,24 @@
 /**
  * PRUEBAS E2E COMPLETAS - TRABIX Backend
- * para levantar docker: docker compose -f docker-compose.test.yml up -d
- * Prerrequisito: npx ts-node prisma/seeds/test-scenarios.seed.ts
+ * npm install //instala dependencias
+ * docker-compose -f docker-compose.test.yml up -d // levanta psql y redis
+ * npx prisma generate // genera prisma
+ * npx prisma migrate dev // aplica migracion de prisma a BD
+ * npx prisma migrate deploy // por si no funciona la migracion de prisma a la BD
+ * npx tsc --noEmit // para verificar TS
+ * npx prisma migrate reset // resetea TODOOO lo de prisma y bd y ejecuta el seed
+
+ * psql -h localhost -p 5433 -U postgres -d trabix_test // para entrar a psql clave:testpassword
+ * para ver tablas: \dt
+ * para ver estructura de una tabla: \d nombre_tabla
+ * para ver datos de una tabla: SELECT * FROM nombre_tabla;
+ *
+ * npm run start:dev //no se
+ *
+ * Prerrequisito: npx ts-node prisma/seeds/test-scenarios.seed.ts // se ejecuta al resetear
  * Ejecutar: npm run test:e2e -- --testPathPattern=all-scenarios
  * ejecutar con .env.test para conexiones de desarrollo:
  * NODE_ENV=test npx dotenv-cli -e .env.test -- npm run test:e2e -- --testPathPattern=all-scenarios
- * construir redis: docker run -p 6379:6379 redis
  */
 
 import { Test, TestingModule } from '@nestjs/testing';
@@ -41,12 +54,12 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         // Login usuarios de prueba
         const users = [
-            { ced: 'ADMIN001', pwd: 'Admin123!' },
-            { ced: 'REC-N2-A', pwd: 'Test123!' },
-            { ced: 'VEN-N5-A1', pwd: 'Test123!' },
-            { ced: 'V60-ACTIVO', pwd: 'Test123!' },
-            { ced: 'V60-T-CASA', pwd: 'Test123!' },
-            { ced: 'V60-VD-PEND', pwd: 'Test123!' },
+            { ced: '1234567890', pwd: 'Admin123!' },
+            { ced: 1000000021, pwd: 'Test123!' },
+            { ced: 1000000051, pwd: 'Test123!' },
+            { ced: 1000000001, pwd: 'Test123!' },
+            { ced: 1000000060, pwd: 'Test123!' },
+            { ced: 1000000029, pwd: 'Test123!' },
         ];
 
         for (const u of users) {
@@ -75,7 +88,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Login admin exitoso', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'ADMIN001', password: 'Admin123!' });
+                .send({ cedula: 1234567890, password: 'Admin123!' });
             expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('accessToken');
             expect(res.body).toHaveProperty('refreshToken');
@@ -85,7 +98,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Login vendedor 60/40', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'V60-ACTIVO', password: 'Test123!' });
+                .send({ cedula: 1000000001, password: 'Test123!' });
             expect(res.status).toBe(200);
             // Verificamos que el login funciona
             expect(res.body.user.rol).toBe('VENDEDOR');
@@ -94,7 +107,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Login vendedor 50/50', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'VEN-N5-A1', password: 'Test123!' });
+                .send({ cedula: 1000000051, password: 'Test123!' });
             expect(res.status).toBe(200);
             expect(res.body.user.rol).toBe('VENDEDOR');
         });
@@ -109,14 +122,14 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Password incorrecto = 401', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'V60-ACTIVO', password: 'Wrong!' });
+                .send({ cedula: 1000000001, password: 'Wrong!' });
             expect(res.status).toBe(401);
         });
 
         it('Usuario INACTIVO = 401', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'V60-INACTIVO', password: 'Test123!' });
+                .send({ cedula: 1000000003, password: 'Test123!' });
             expect(res.status).toBe(401);
         });
 
@@ -137,13 +150,13 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Token válido = 200', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
         it('POST /auth/logout - cierra sesión', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/logout')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 204]).toContain(res.status);
         });
 
@@ -156,7 +169,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Refresh token funciona', async () => {
             const login = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'ADMIN001', password: 'Admin123!' });
+                .send({ cedula: 1234567890, password: 'Admin123!' });
 
             if (login.body.refreshToken) {
                 const res = await request(app.getHttpServer())
@@ -183,7 +196,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Usuario sin cambiar pwd tiene flag', async () => {
             const usuario = await prisma.usuario.findFirst({
-                where: { cedula: 'V60-SINPWD' }
+                where: { cedula: 1000000002 }
             });
             if (usuario) {
                 expect(usuario.requiereCambioPassword).toBe(true);
@@ -198,7 +211,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista todos los usuarios', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
             expect(res.body).toHaveProperty('data');
             expect(Array.isArray(res.body.data)).toBe(true);
@@ -207,7 +220,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Filtrar por rol VENDEDOR', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios?rol=VENDEDOR')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             if (res.status === 200 && res.body.data) {
                 res.body.data.forEach((u: any) => expect(u.rol).toBe('VENDEDOR'));
             }
@@ -216,7 +229,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Filtrar por estado ACTIVO', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios?estado=ACTIVO')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             if (res.status === 200 && res.body.data) {
                 res.body.data.forEach((u: any) => expect(u.estado).toBe('ACTIVO'));
             }
@@ -234,7 +247,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Paginación funciona', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios?page=1&limit=5')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             if (res.status === 200) {
                 expect(res.body.data.length).toBeLessThanOrEqual(5);
             }
@@ -243,21 +256,21 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Perfil propio', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios/me')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect(res.status).toBe(200);
         });
 
         it('Admin obtiene cualquier usuario', async () => {
             const res = await request(app.getHttpServer())
-                .get(`/api/v1/usuarios/${ids['V60-ACTIVO']}`)
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .get(`/api/v1/usuarios/${ids[1000000001]}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
         it('Usuario inexistente = 404', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios/uuid-inexistente-123')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([400, 404]).toContain(res.status);
         });
 
@@ -265,7 +278,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ced = `TEST-${Date.now()}`;
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula: ced, nombre: 'Test', apellidos: 'User',
                     email: `${ced}@test.com`, telefono: `320${Date.now().toString().slice(-7)}`,
@@ -280,9 +293,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Cédula duplicada = 400', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    cedula: 'V60-ACTIVO', nombre: 'Dup', apellidos: 'Test',
+                    cedula: 1000000001, nombre: 'Dup', apellidos: 'Test',
                     email: 'dup@test.com', telefono: '3201111111', direccion: 'Dir',
                 });
             expect(res.status).toBe(400);
@@ -292,21 +305,21 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ced = `TEST-5050-${Date.now()}`;
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula: ced, nombre: 'Test', apellidos: '5050',
                     email: `${ced}@test.com`, telefono: `321${Date.now().toString().slice(-7)}`,
-                    direccion: 'Dir', reclutadorId: ids['REC-N2-A'],
+                    direccion: 'Dir', reclutadorId: ids[1000000021],
                 });
             if (res.status === 201) {
-                expect(res.body.reclutadorId).toBe(ids['REC-N2-A']);
+                expect(res.body.reclutadorId).toBe(ids[1000000021]);
             }
         });
 
         it('Vendedor no puede crear usuarios', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
+                .set('Authorization', `Bearer ${tokens[1000000001]}`)
                 .send({
                     cedula: 'PROHIBIDO', nombre: 'Test', apellidos: 'Test',
                     email: 'prohibido@test.com', telefono: '3209999999', direccion: 'Dir',
@@ -316,7 +329,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Jerarquía 5 niveles existe', async () => {
             const ven = await prisma.usuario.findFirst({
-                where: { cedula: 'VEN-N5-A1' },
+                where: { cedula: 1000000051 },
                 include: { reclutador: { include: { reclutador: { include: { reclutador: { include: { reclutador: true } } } } } } }
             });
             if (ven) {
@@ -327,7 +340,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('REC-N4-A tiene 3 reclutados', async () => {
-            const rec = await prisma.usuario.findFirst({ where: { cedula: 'REC-N4-A' } });
+            const rec = await prisma.usuario.findFirst({ where: { cedula: 1000000041 } });
             if (rec) {
                 const count = await prisma.usuario.count({ where: { reclutadorId: rec.id } });
                 expect(count).toBe(3);
@@ -345,7 +358,8 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('3. LOTES', () => {
         async function crearVendedorTemp(suffix: string) {
-            const ced = `TEMP-${suffix}-${Date.now()}`;
+            const timestamp = Math.floor(Date.now() % 1_000_000_000); // últimos 9 dígitos del timestamp
+            const ced = Number(`${timestamp}${suffix.toString().padStart(2, '0')}`);
             const admin = await prisma.usuario.findFirst({ where: { rol: 'ADMIN' } });
             return prisma.usuario.create({
                 data: {
@@ -360,7 +374,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ven = await crearVendedorTemp('L50');
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ vendedorId: ven.id, cantidadTrabix: 50 });
             if (res.status === 201) {
                 const tandas = await prisma.tanda.count({ where: { loteId: res.body.id } });
@@ -372,7 +386,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ven = await crearVendedorTemp('L51');
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ vendedorId: ven.id, cantidadTrabix: 51 });
             if (res.status === 201) {
                 const tandas = await prisma.tanda.count({ where: { loteId: res.body.id } });
@@ -392,7 +406,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ven = await crearVendedorTemp('CREADO');
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ vendedorId: ven.id, cantidadTrabix: 50 });
             if (res.status === 201) {
                 expect(res.body.estado).toBe('CREADO');
@@ -425,7 +439,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const ven = await crearVendedorTemp('ERR0');
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ vendedorId: ven.id, cantidadTrabix: 0 });
             expect(res.status).toBe(400);
         });
@@ -435,7 +449,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/lotes/${lote.id}/activar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 if (res.status === 200) {
                     expect(res.body.estado).toBe('ACTIVO');
                 }
@@ -445,19 +459,19 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista todos los lotes', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
         it('Filtrar por estado ACTIVO', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/lotes?estado=ACTIVO')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
         it('Múltiples lotes activos permitidos', async () => {
-            const multi = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const multi = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (multi) {
                 const count = await prisma.lote.count({ where: { vendedorId: multi.id, estado: 'ACTIVO' } });
                 expect(count).toBeGreaterThanOrEqual(1);
@@ -638,14 +652,14 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista ventas', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
         it('Filtrar por PENDIENTE', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/ventas?estado=PENDIENTE')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
@@ -654,7 +668,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (v) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${v.id}/aprobar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400]).toContain(res.status);
             }
         });
@@ -681,7 +695,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Venta mixta tiene múltiples detalles', async () => {
             const v = await prisma.venta.findFirst({
-                where: { vendedor: { cedula: 'V60-VD-MIXTA' } },
+                where: { vendedor: { cedula: 1000000032 } },
                 include: { detalles: true }
             });
             if (v) expect(v.detalles.length).toBeGreaterThan(1);
@@ -690,7 +704,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Límite regalos 8%', async () => {
             const LIMITE = CONFIG['LIMITE_REGALOS_PORCENTAJE'] || 8;
             const v = await prisma.venta.findFirst({
-                where: { vendedor: { cedula: 'V60-LIM-REG' } },
+                where: { vendedor: { cedula: 1000000036 } },
                 include: { detalles: true, lote: true }
             });
             if (v && v.lote) {
@@ -761,7 +775,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista cuadres pendientes', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/cuadres?estado=PENDIENTE')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
@@ -838,7 +852,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista equipamientos', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/equipamiento')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
     });
@@ -864,7 +878,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Cadena intacta', async () => {
             const v = await prisma.usuario.findFirst({
-                where: { cedula: 'VEN-N5-A1' },
+                where: { cedula: 1000000051 },
                 include: { reclutador: { include: { reclutador: { include: { reclutador: true } } } } }
             });
             expect(v?.reclutador).not.toBeNull();
@@ -873,7 +887,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('3 vendedores bajo N4-A', async () => {
-            const n4 = await prisma.usuario.findFirst({ where: { cedula: 'REC-N4-A' } });
+            const n4 = await prisma.usuario.findFirst({ where: { cedula: 1000000041 } });
             if (n4) {
                 const count = await prisma.usuario.count({ where: { reclutadorId: n4.id } });
                 expect(count).toBe(3);
@@ -885,7 +899,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const c = await prisma.cuadre.findFirst({
                 where: {
                     estado: 'EXITOSO',
-                    tanda: { lote: { vendedor: { cedula: 'VEN-N5-A1' } } }
+                    tanda: { lote: { vendedor: { cedula: 1000000051 } } }
                 }
             });
             expect(c).not.toBeNull();
@@ -896,7 +910,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const c = await prisma.cuadre.findFirst({
                 where: {
                     estado: 'PENDIENTE',
-                    tanda: { lote: { vendedor: { cedula: 'VEN-N5-A2' } } }
+                    tanda: { lote: { vendedor: { cedula: 1000000052 } } }
                 }
             });
             expect(c).not.toBeNull();
@@ -987,14 +1001,14 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin ve stock', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/stock')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
         it('Admin lista configuraciones', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/configuraciones')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
@@ -1006,7 +1020,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor no accede a admin', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/stock')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([401, 403]).toContain(res.status);
         });
 
@@ -1055,7 +1069,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (mc) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/mini-cuadres/${mc.id}/confirmar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ montoRecibido: Number(mc.montoFinal) });
                 expect([200, 400, 404]).toContain(res.status);
             }
@@ -1144,7 +1158,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('12. PRIORIZACIÓN DE LOTES', () => {
         it('V60-MULTI-L tiene múltiples lotes activos', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (ven) {
                 const count = await prisma.lote.count({ where: { vendedorId: ven.id, estado: 'ACTIVO' } });
                 expect(count).toBeGreaterThan(1);
@@ -1152,7 +1166,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Lotes ordenados por fechaCreacion ASC', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (ven) {
                 const lotes = await prisma.lote.findMany({
                     where: { vendedorId: ven.id, estado: 'ACTIVO' },
@@ -1165,7 +1179,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Lote más antiguo tiene prioridad para ventas', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (ven) {
                 const loteMasAntiguo = await prisma.lote.findFirst({
                     where: { vendedorId: ven.id, estado: 'ACTIVO' },
@@ -1182,7 +1196,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Al finalizar lote, siguiente es el más antiguo', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (ven) {
                 const lotes = await prisma.lote.findMany({
                     where: { vendedorId: ven.id, estado: 'ACTIVO' },
@@ -1193,7 +1207,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Ventas asociadas al lote correcto (más antiguo)', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-VD-APROB' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000030 } });
             if (ven) {
                 const ventas = await prisma.venta.findMany({
                     where: { vendedorId: ven.id },
@@ -1204,7 +1218,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Stock se descuenta del lote más antiguo', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-MULTI-L' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000019 } });
             if (ven) {
                 const lotes = await prisma.lote.findMany({
                     where: { vendedorId: ven.id, estado: 'ACTIVO' },
@@ -1219,8 +1233,8 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('No crear venta si no hay lote activo con stock', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-SIN-L' } });
-            if (ven && tokens['ADMIN001']) {
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000062 } });
+            if (ven && tokens[1234567890]) {
                 const lotes = await prisma.lote.count({ where: { vendedorId: ven.id, estado: 'ACTIVO' } });
                 expect(lotes).toBe(0);
             }
@@ -1261,11 +1275,11 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('13. FLUJOS INTEGRADOS - VENTAS', () => {
         it('Flujo: Crear venta -> estado PENDIENTE', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-T-CASA' } });
-            if (ven && tokens['V60-T-CASA']) {
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000060 } });
+            if (ven && tokens[1000000060]) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['V60-T-CASA']}`)
+                    .set('Authorization', `Bearer ${tokens[1000000060]}`)
                     .send({
                         detalles: [{ tipo: 'UNIDAD', cantidad: 1 }]
                     });
@@ -1280,7 +1294,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (venta) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${venta.id}/aprobar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400]).toContain(res.status);
             }
         });
@@ -1290,7 +1304,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (venta) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${venta.id}/rechazar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1324,7 +1338,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('No permitir más regalos que límite 8%', async () => {
             const LIMITE = CONFIG['LIMITE_REGALOS_PORCENTAJE'] || 8;
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-LIM-REG' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000036 } });
             if (ven) {
                 const lote = await prisma.lote.findFirst({ where: { vendedorId: ven.id } });
                 if (lote) {
@@ -1385,7 +1399,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/liberar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1395,7 +1409,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/recoger`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1405,7 +1419,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/confirmar-recepcion`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1507,7 +1521,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (cuadre) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/cuadres/${cuadre.id}/confirmar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ montoRecibido: Number(cuadre.montoEsperado) });
                 expect([200, 400, 404]).toContain(res.status);
             }
@@ -1564,7 +1578,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin lista cuadres pendientes', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/cuadres?estado=PENDIENTE')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect(res.status).toBe(200);
         });
 
@@ -1617,7 +1631,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const cuadre = await prisma.cuadre.findFirst({
                 where: {
                     estado: 'EXITOSO',
-                    tanda: { lote: { vendedor: { cedula: 'VEN-N5-A1' } } }
+                    tanda: { lote: { vendedor: { cedula: 1000000051 } } }
                 }
             });
             expect(cuadre).not.toBeNull();
@@ -1698,7 +1712,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Jerarquía VEN-N5-A1 tiene 4 niveles arriba', async () => {
             const ven = await prisma.usuario.findFirst({
-                where: { cedula: 'VEN-N5-A1' },
+                where: { cedula: 1000000051 },
                 include: {
                     reclutador: {
                         include: {
@@ -1753,11 +1767,11 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         });
 
         it('Venta mayor < 21 debe fallar', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-VM-ANT' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000061 } });
             if (ven) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas-mayor')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId: ven.id, cantidadUnidades: 20, modalidad: 'ANTICIPADO' });
                 expect([400, 404]).toContain(res.status);
             }
@@ -1810,18 +1824,18 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor NO puede listar todos los usuarios', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([401, 403]).toContain(res.status);
         });
 
         it('Vendedor NO puede ver lotes de otros', async () => {
-            const otroVendedor = await prisma.usuario.findFirst({ where: { cedula: 'V60-T-CASA' } });
+            const otroVendedor = await prisma.usuario.findFirst({ where: { cedula: 1000000060 } });
             if (otroVendedor) {
                 const lote = await prisma.lote.findFirst({ where: { vendedorId: otroVendedor.id } });
                 if (lote) {
                     const res = await request(app.getHttpServer())
                         .get(`/api/v1/lotes/${lote.id}`)
-                        .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                        .set('Authorization', `Bearer ${tokens[1000000001]}`);
                     expect([401, 403, 404]).toContain(res.status);
                 }
             }
@@ -1830,8 +1844,8 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor NO puede crear lotes', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
-                .send({ vendedorId: ids['V60-ACTIVO'], cantidadTrabix: 50 });
+                .set('Authorization', `Bearer ${tokens[1000000001]}`)
+                .send({ vendedorId: ids[1000000001], cantidadTrabix: 50 });
             expect([401, 403]).toContain(res.status);
         });
 
@@ -1840,7 +1854,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/lotes/${lote.id}/activar`)
-                    .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                    .set('Authorization', `Bearer ${tokens[1000000001]}`);
                 expect([401, 403]).toContain(res.status);
             }
         });
@@ -1850,7 +1864,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (venta) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${venta.id}/aprobar`)
-                    .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                    .set('Authorization', `Bearer ${tokens[1000000001]}`);
                 expect([401, 403]).toContain(res.status);
             }
         });
@@ -1860,7 +1874,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (venta) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${venta.id}/rechazar`)
-                    .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                    .set('Authorization', `Bearer ${tokens[1000000001]}`);
                 expect([401, 403]).toContain(res.status);
             }
         });
@@ -1870,7 +1884,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (cuadre) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/cuadres/${cuadre.id}/confirmar`)
-                    .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
+                    .set('Authorization', `Bearer ${tokens[1000000001]}`)
                     .send({ montoRecibido: 100000 });
                 expect([401, 403]).toContain(res.status);
             }
@@ -1881,7 +1895,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/liberar`)
-                    .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                    .set('Authorization', `Bearer ${tokens[1000000001]}`);
                 expect([401, 403]).toContain(res.status);
             }
         });
@@ -1889,7 +1903,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor NO puede modificar configuraciones', async () => {
             const res = await request(app.getHttpServer())
                 .put('/api/v1/admin/configuraciones/PRECIO_UNIDAD')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
+                .set('Authorization', `Bearer ${tokens[1000000001]}`)
                 .send({ valor: '10000' });
             expect([401, 403, 404]).toContain(res.status);
         });
@@ -1897,16 +1911,16 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor NO puede ver transacciones del fondo', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/fondo/transacciones')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([401, 403, 404]).toContain(res.status);
         });
 
         it('Vendedor solo ve SUS lotes', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/lotes/mis-lotes')
-                .set('Authorization', `Bearer ${tokens['V60-T-CASA']}`);
+                .set('Authorization', `Bearer ${tokens[1000000060]}`);
             if (res.status === 200 && res.body.data) {
-                const vendedor = await prisma.usuario.findFirst({ where: { cedula: 'V60-T-CASA' } });
+                const vendedor = await prisma.usuario.findFirst({ where: { cedula: 1000000060 } });
                 res.body.data.forEach((l: any) => expect(l.vendedorId).toBe(vendedor?.id));
             }
         });
@@ -1914,9 +1928,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor solo ve SUS ventas', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/ventas/mis-ventas')
-                .set('Authorization', `Bearer ${tokens['V60-VD-PEND']}`);
+                .set('Authorization', `Bearer ${tokens[1000000029]}`);
             if (res.status === 200 && res.body.data) {
-                const vendedor = await prisma.usuario.findFirst({ where: { cedula: 'V60-VD-PEND' } });
+                const vendedor = await prisma.usuario.findFirst({ where: { cedula: 1000000029 } });
                 res.body.data.forEach((v: any) => expect(v.vendedorId).toBe(vendedor?.id));
             }
         });
@@ -1924,7 +1938,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor solo ve SUS cuadres', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/cuadres/mis-cuadres')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([200, 404]).toContain(res.status);
         });
 
@@ -1933,15 +1947,15 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             for (const ep of endpoints) {
                 const res = await request(app.getHttpServer())
                     .get(ep)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect(res.status).toBe(200);
             }
         });
 
         it('Vendedor NO puede desactivar usuarios', async () => {
             const res = await request(app.getHttpServer())
-                .patch(`/api/v1/usuarios/${ids['V60-ACTIVO']}/desactivar`)
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .patch(`/api/v1/usuarios/${ids[1000000001]}/desactivar`)
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([401, 403, 404]).toContain(res.status);
         });
     });
@@ -1951,11 +1965,11 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('19. FLUJOS DE EQUIPAMIENTO', () => {
         it('Vendedor puede solicitar equipamiento', async () => {
-            const venSinEquipo = await prisma.usuario.findFirst({ where: { cedula: 'V60-SIN-EQ' } });
+            const venSinEquipo = await prisma.usuario.findFirst({ where: { cedula: 1000000013 } });
             if (venSinEquipo) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/equipamiento/solicitar')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId: venSinEquipo.id, tieneDeposito: true });
                 expect([200, 201, 400, 404]).toContain(res.status);
             }
@@ -1966,7 +1980,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/aprobar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1974,7 +1988,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin rechaza solicitud de equipamiento', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/equipamiento/test-id/rechazar')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 400, 404]).toContain(res.status);
         });
 
@@ -1983,7 +1997,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/entregar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -1993,7 +2007,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/reportar-dano`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ tipoDano: 'NEVERA' });
                 expect([200, 400, 404]).toContain(res.status);
             }
@@ -2004,7 +2018,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/reportar-dano`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ tipoDano: 'PIJAMA' });
                 expect([200, 400, 404]).toContain(res.status);
             }
@@ -2015,7 +2029,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/reportar-perdida`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -2025,7 +2039,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/devolver`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -2035,7 +2049,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (equipo) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/equipamiento/${equipo.id}/pagar-mensualidad`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -2045,24 +2059,24 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const DANO_PIJAMA = CONFIG['COSTO_DANO_PIJAMA'] || 60000;
 
             const equipoDanoN = await prisma.equipamiento.findFirst({
-                where: { vendedor: { cedula: 'V60-EQ-DANO-N' } }
+                where: { vendedor: { cedula: 1000000007 } }
             });
             if (equipoDanoN) expect(Number(equipoDanoN.deudaDano)).toBe(DANO_NEVERA);
 
             const equipoDanoP = await prisma.equipamiento.findFirst({
-                where: { vendedor: { cedula: 'V60-EQ-DANO-P' } }
+                where: { vendedor: { cedula: 1000000008 } }
             });
             if (equipoDanoP) expect(Number(equipoDanoP.deudaDano)).toBe(DANO_PIJAMA);
 
             const equipoDanoA = await prisma.equipamiento.findFirst({
-                where: { vendedor: { cedula: 'V60-EQ-DANO-A' } }
+                where: { vendedor: { cedula: 1000000009 } }
             });
             if (equipoDanoA) expect(Number(equipoDanoA.deudaDano)).toBe(DANO_NEVERA + DANO_PIJAMA);
         });
 
         it('Devuelto con depósito tiene depositoDevuelto = true', async () => {
             const equipo = await prisma.equipamiento.findFirst({
-                where: { vendedor: { cedula: 'V60-EQ-DEVUELTO' } }
+                where: { vendedor: { cedula: 1000000011 } }
             });
             if (equipo) {
                 expect(equipo.estado).toBe('DEVUELTO');
@@ -2072,7 +2086,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Mensualidad atrasada > 30 días', async () => {
             const equipo = await prisma.equipamiento.findFirst({
-                where: { vendedor: { cedula: 'V60-EQ-ATRAS' } }
+                where: { vendedor: { cedula: 1000000006 } }
             });
             if (equipo && equipo.ultimaMensualidadPagada) {
                 const diff = Date.now() - equipo.ultimaMensualidadPagada.getTime();
@@ -2169,7 +2183,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote) {
                 const res = await request(app.getHttpServer())
                     .get(`/api/v1/lotes/${lote.id}/resumen-financiero`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 if (res.status === 200) {
                     expect(res.body).toHaveProperty('inversionTotal');
                     expect(res.body).toHaveProperty('dineroRecaudado');
@@ -2221,7 +2235,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: tanda.lote.vendedorId,
                         detalles: [{ tipo: 'UNIDAD', cantidad: tanda.stockActual + 10 }]
@@ -2238,7 +2252,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: tanda.lote.vendedorId,
                         detalles: [{ tipo: 'UNIDAD', cantidad: 1 }]
@@ -2255,7 +2269,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: tanda.lote.vendedorId,
                         tandaId: tanda.id,
@@ -2273,7 +2287,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: tanda.lote.vendedorId,
                         tandaId: tanda.id,
@@ -2286,9 +2300,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Venta con cantidad 0 debe fallar', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    vendedorId: ids['V60-T-CASA'],
+                    vendedorId: ids[1000000060],
                     detalles: [{ tipo: 'UNIDAD', cantidad: 0 }]
                 });
             expect([400, 422]).toContain(res.status);
@@ -2297,16 +2311,16 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Venta con cantidad negativa debe fallar', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    vendedorId: ids['V60-T-CASA'],
+                    vendedorId: ids[1000000060],
                     detalles: [{ tipo: 'UNIDAD', cantidad: -5 }]
                 });
             expect([400, 422]).toContain(res.status);
         });
 
         it('Exceder límite de regalos 8% debe fallar', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-LIM-REG' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000036 } });
             const lote = await prisma.lote.findFirst({ where: { vendedorId: ven?.id } });
             if (lote) {
                 const LIMITE = CONFIG['LIMITE_REGALOS_PORCENTAJE'] || 8;
@@ -2314,7 +2328,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: ven?.id,
                         detalles: [{ tipo: 'REGALO', cantidad: maxRegalos + 5 }]
@@ -2326,9 +2340,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Venta sin detalles debe fallar', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    vendedorId: ids['V60-T-CASA'],
+                    vendedorId: ids[1000000060],
                     detalles: []
                 });
             expect([400, 422]).toContain(res.status);
@@ -2352,7 +2366,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote && lote.tandas[1]?.estado === 'INACTIVA') {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${lote.tandas[1].id}/liberar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([400, 422]).toContain(res.status);
             }
         });
@@ -2365,7 +2379,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote && lote.tandas[1]?.estado === 'INACTIVA') {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${lote.tandas[1].id}/liberar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([400, 422]).toContain(res.status);
             }
         });
@@ -2380,7 +2394,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/recoger`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([400, 422]).toContain(res.status);
             }
         });
@@ -2388,21 +2402,21 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Stock admin suficiente para crear lote', async () => {
             const stock = await prisma.stockAdmin.findFirst();
             if (stock && stock.stockFisico < 1000) {
-                const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
+                const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000001 } });
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/lotes')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId: ven?.id, cantidadTrabix: stock.stockFisico + 1000 });
                 expect([400, 422]).toContain(res.status);
             }
         });
 
         it('Usuario INACTIVO no puede tener lotes nuevos', async () => {
-            const venInactivo = await prisma.usuario.findFirst({ where: { cedula: 'V60-INACTIVO' } });
+            const venInactivo = await prisma.usuario.findFirst({ where: { cedula: 1000000003 } });
             if (venInactivo) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/lotes')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId: venInactivo.id, cantidadTrabix: 50 });
                 expect([400, 422]).toContain(res.status);
             }
@@ -2410,10 +2424,10 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Venta mayor mínimo 21 unidades', async () => {
             const MIN = CONFIG['MINIMO_VENTA_MAYOR'] || 21;
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000001 } });
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas-mayor')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ vendedorId: ven?.id, cantidadUnidades: MIN - 1, modalidad: 'ANTICIPADO' });
             expect([400, 422]).toContain(res.status);
         });
@@ -2467,7 +2481,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
                 if (venta) {
                     const res = await request(app.getHttpServer())
                         .post(`/api/v1/ventas/${venta.id}/aprobar`)
-                        .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                        .set('Authorization', `Bearer ${tokens[1234567890]}`);
                     expect([400, 422]).toContain(res.status);
                 }
             }
@@ -2479,24 +2493,12 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('23. ACTUALIZACIÓN DE DATOS (CRUD)', () => {
         it('Admin actualiza datos de vendedor', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000001 } });
             if (ven) {
                 const res = await request(app.getHttpServer())
                     .patch(`/api/v1/usuarios/${ven.id}`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ telefono: '3109876543' });
-                expect([200, 400, 404]).toContain(res.status);
-            }
-        });
-
-        it('Admin desactiva vendedor', async () => {
-            const ven = await prisma.usuario.findFirst({
-                where: { cedula: { startsWith: 'TEMP-' }, estado: 'ACTIVO' }
-            });
-            if (ven) {
-                const res = await request(app.getHttpServer())
-                    .patch(`/api/v1/usuarios/${ven.id}/desactivar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -2506,7 +2508,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (ven) {
                 const res = await request(app.getHttpServer())
                     .patch(`/api/v1/usuarios/${ven.id}/activar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 404]).toContain(res.status);
             }
         });
@@ -2514,7 +2516,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Usuario cambia su password', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/cambiar-password')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
+                .set('Authorization', `Bearer ${tokens[1000000001]}`)
                 .send({ passwordActual: 'Test123!', passwordNuevo: 'Test123!' });
             expect([200, 400, 404]).toContain(res.status);
         });
@@ -2522,7 +2524,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin actualiza configuración', async () => {
             const res = await request(app.getHttpServer())
                 .patch('/api/v1/admin/configuraciones/PRECIO_UNIDAD')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ valor: '8000' });
             expect([200, 400, 404]).toContain(res.status);
         });
@@ -2530,7 +2532,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin actualiza stock', async () => {
             const res = await request(app.getHttpServer())
                 .patch('/api/v1/admin/stock')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ cantidad: 100, tipo: 'ENTRADA', motivo: 'Reposición test' });
             expect([200, 400, 404]).toContain(res.status);
         });
@@ -2538,21 +2540,21 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Vendedor actualiza su perfil', async () => {
             const res = await request(app.getHttpServer())
                 .patch('/api/v1/usuarios/me')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`)
+                .set('Authorization', `Bearer ${tokens[1000000001]}`)
                 .send({ telefono: '3101234567' });
             expect([200, 400, 404]).toContain(res.status);
         });
 
         it('No se puede cambiar cédula', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-ACTIVO' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000001 } });
             if (ven) {
                 const res = await request(app.getHttpServer())
                     .patch(`/api/v1/usuarios/${ven.id}`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ cedula: 'NUEVA-CEDULA' });
                 expect([200, 400]).toContain(res.status);
                 const updated = await prisma.usuario.findUnique({ where: { id: ven.id } });
-                expect(updated?.cedula).toBe('V60-ACTIVO');
+                expect(updated?.cedula).toBe(1000000001);
             }
         });
     });
@@ -2564,42 +2566,42 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Admin obtiene dashboard general', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/dashboard')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 404]).toContain(res.status);
         });
 
         it('Vendedor obtiene su dashboard', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/vendedor/dashboard')
-                .set('Authorization', `Bearer ${tokens['V60-ACTIVO']}`);
+                .set('Authorization', `Bearer ${tokens[1000000001]}`);
             expect([200, 404]).toContain(res.status);
         });
 
         it('Admin obtiene reporte de ventas', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/reportes/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 404]).toContain(res.status);
         });
 
         it('Admin obtiene reporte de cuadres pendientes', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/reportes/cuadres-pendientes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 404]).toContain(res.status);
         });
 
         it('Admin obtiene estadísticas del fondo', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/fondo/estadisticas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 404]).toContain(res.status);
         });
 
         it('Admin obtiene resumen de vendedores', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/admin/reportes/vendedores')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([200, 404]).toContain(res.status);
         });
     });
@@ -2615,7 +2617,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (ven) {
                 const res = await request(app.getHttpServer())
                     .delete(`/api/v1/usuarios/${ven.id}`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([400, 403, 404, 405]).toContain(res.status);
             }
         });
@@ -2627,7 +2629,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote) {
                 const res = await request(app.getHttpServer())
                     .delete(`/api/v1/lotes/${lote.id}`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([400, 403, 404, 405]).toContain(res.status);
             }
         });
@@ -2635,21 +2637,21 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('ID inválido retorna 400 o 404', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios/id-invalido-123')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([400, 404]).toContain(res.status);
         });
 
         it('UUID inexistente retorna 404', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/v1/usuarios/00000000-0000-0000-0000-000000000000')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                .set('Authorization', `Bearer ${tokens[1234567890]}`);
             expect([400, 404]).toContain(res.status);
         });
 
         it('Datos malformados retornan 400', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ cedula: 123, nombre: null });
             expect([400, 422]).toContain(res.status);
         });
@@ -2677,7 +2679,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const cedula = `E2E-FULL-${Date.now()}`;
             const resUsuario = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula, nombre: 'E2E', apellidos: 'Full Test',
                     email: `${cedula}@test.com`, telefono: `399${Date.now().toString().slice(-7)}`,
@@ -2690,7 +2692,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
                 const resLote = await request(app.getHttpServer())
                     .post('/api/v1/lotes')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId, cantidadTrabix: 50 });
 
                 if (resLote.status === 201) {
@@ -2699,7 +2701,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
                     const resActivar = await request(app.getHttpServer())
                         .post(`/api/v1/lotes/${loteId}/activar`)
-                        .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                        .set('Authorization', `Bearer ${tokens[1234567890]}`);
 
                     if (resActivar.status === 200) {
                         expect(resActivar.body.estado).toBe('ACTIVO');
@@ -2711,7 +2713,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
                         if (tanda) {
                             await request(app.getHttpServer())
                                 .post(`/api/v1/tandas/${tanda.id}/liberar`)
-                                .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                                .set('Authorization', `Bearer ${tokens[1234567890]}`);
 
                             expect(tanda.id).toBeDefined();
                         }
@@ -2724,7 +2726,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             const cedula = `E2E-VM-${Date.now()}`;
             const resUsuario = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula, nombre: 'E2E', apellidos: 'Venta Mayor',
                     email: `${cedula}@test.com`, telefono: `398${Date.now().toString().slice(-7)}`,
@@ -2737,7 +2739,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
                 const resVM = await request(app.getHttpServer())
                     .post('/api/v1/ventas-mayor')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ vendedorId, cantidadUnidades: MIN + 5, modalidad: 'ANTICIPADO' });
 
                 expect([200, 201, 400]).toContain(resVM.status);
@@ -2784,7 +2786,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
         it('Flujo equipamiento: Solicitar → Aprobar → Entregar → Usar → Devolver', async () => {
             const venSinEquipo = await prisma.usuario.findFirst({
-                where: { cedula: 'V60-SIN-EQ' }
+                where: { cedula: 1000000013 }
             });
 
             if (venSinEquipo) {
@@ -2795,7 +2797,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
                 if (!equipoExistente) {
                     const resSolicitar = await request(app.getHttpServer())
                         .post('/api/v1/equipamiento/solicitar')
-                        .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                        .set('Authorization', `Bearer ${tokens[1234567890]}`)
                         .send({ vendedorId: venSinEquipo.id, tieneDeposito: true });
 
                     expect([200, 201, 400]).toContain(resSolicitar.status);
@@ -2805,11 +2807,11 @@ describe('TRABIX - Pruebas E2E Completas', () => {
 
                         await request(app.getHttpServer())
                             .post(`/api/v1/equipamiento/${equipoId}/aprobar`)
-                            .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                            .set('Authorization', `Bearer ${tokens[1234567890]}`);
 
                         await request(app.getHttpServer())
                             .post(`/api/v1/equipamiento/${equipoId}/entregar`)
-                            .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                            .set('Authorization', `Bearer ${tokens[1234567890]}`);
 
                         expect(equipoId).toBeDefined();
                     }
@@ -2825,7 +2827,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Email inválido al crear usuario', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula: `VAL-${Date.now()}`, nombre: 'Test', apellidos: 'Val',
                     email: 'email-invalido', telefono: '3101234567', direccion: 'Dir'
@@ -2836,7 +2838,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Teléfono muy corto al crear usuario', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
                     cedula: `VAL2-${Date.now()}`, nombre: 'Test', apellidos: 'Val',
                     email: 'val@test.com', telefono: '123', direccion: 'Dir'
@@ -2847,25 +2849,25 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Cantidad lote negativa', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
-                .send({ vendedorId: ids['V60-ACTIVO'], cantidadTrabix: -50 });
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
+                .send({ vendedorId: ids[1000000001], cantidadTrabix: -50 });
             expect([400, 422]).toContain(res.status);
         });
 
         it('Cantidad lote decimal', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/lotes')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
-                .send({ vendedorId: ids['V60-ACTIVO'], cantidadTrabix: 50.5 });
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
+                .send({ vendedorId: ids[1000000001], cantidadTrabix: 50.5 });
             expect([400, 422]).toContain(res.status);
         });
 
         it('Tipo de venta inválido', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    vendedorId: ids['V60-T-CASA'],
+                    vendedorId: ids[1000000060],
                     detalles: [{ tipo: 'TIPO_INEXISTENTE', cantidad: 5 }]
                 });
             expect([400, 422]).toContain(res.status);
@@ -2874,9 +2876,9 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Modalidad venta mayor inválida', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/ventas-mayor')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({
-                    vendedorId: ids['V60-ACTIVO'],
+                    vendedorId: ids[1000000001],
                     cantidadUnidades: 25,
                     modalidad: 'MODALIDAD_FAKE'
                 });
@@ -2888,7 +2890,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (cuadre) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/cuadres/${cuadre.id}/confirmar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ montoRecibido: -50000 });
                 expect([400, 422]).toContain(res.status);
             }
@@ -2897,7 +2899,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Campos requeridos faltantes', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/usuarios')
-                .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                .set('Authorization', `Bearer ${tokens[1234567890]}`)
                 .send({ cedula: `INCOMP-${Date.now()}` });
             expect([400, 422]).toContain(res.status);
         });
@@ -2912,7 +2914,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (venta) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/ventas/${venta.id}/aprobar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 422]).toContain(res.status);
             }
         });
@@ -2922,7 +2924,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (cuadre) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/cuadres/${cuadre.id}/confirmar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({ montoRecibido: Number(cuadre.montoEsperado) });
                 expect([200, 400, 422]).toContain(res.status);
             }
@@ -2933,7 +2935,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/tandas/${tanda.id}/liberar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 422]).toContain(res.status);
             }
         });
@@ -2943,18 +2945,18 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (lote) {
                 const res = await request(app.getHttpServer())
                     .post(`/api/v1/lotes/${lote.id}/activar`)
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`);
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`);
                 expect([200, 400, 422]).toContain(res.status);
             }
         });
 
         it('Múltiples ventas simultáneas mismo vendedor', async () => {
-            const ven = await prisma.usuario.findFirst({ where: { cedula: 'V60-T-CASA' } });
+            const ven = await prisma.usuario.findFirst({ where: { cedula: 1000000060 } });
             if (ven) {
                 const promesas = [1, 2, 3].map(() =>
                     request(app.getHttpServer())
                         .post('/api/v1/ventas')
-                        .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                        .set('Authorization', `Bearer ${tokens[1234567890]}`)
                         .send({
                             vendedorId: ven.id,
                             detalles: [{ tipo: 'UNIDAD', cantidad: 1 }]
@@ -2975,7 +2977,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
             if (tanda) {
                 const res = await request(app.getHttpServer())
                     .post('/api/v1/ventas')
-                    .set('Authorization', `Bearer ${tokens['ADMIN001']}`)
+                    .set('Authorization', `Bearer ${tokens[1234567890]}`)
                     .send({
                         vendedorId: tanda.lote.vendedorId,
                         detalles: [{ tipo: 'UNIDAD', cantidad: tanda.stockActual }]

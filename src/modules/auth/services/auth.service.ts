@@ -142,16 +142,26 @@ export class AuthService {
     /**
      * LOGOUT
      */
-    async logout(userId: string, accessToken: string): Promise<void> {
+    async logout(userId: string, accessToken: string, refreshToken?: string): Promise<void> {
         try {
+            // Invalidar refresh token en BD
             await this.prisma.usuario.update({
                 where: { id: userId },
                 data: { refreshTokenHash: null },
             });
 
-            const decoded: any = this.jwtService.decode(accessToken);
-            if (decoded?.jti && decoded?.exp) {
-                await this.tokenBlacklistService.addToBlacklist(decoded.jti, decoded.exp);
+            // Agregar access token a blacklist
+            const decodedAccess: any = this.jwtService.decode(accessToken);
+            if (decodedAccess?.jti && decodedAccess?.exp) {
+                await this.tokenBlacklistService.addToBlacklist(decodedAccess.jti, decodedAccess.exp);
+            }
+
+            // Agregar refresh token a blacklist si está presente
+            if (refreshToken) {
+                const decodedRefresh: any = this.jwtService.decode(refreshToken);
+                if (decodedRefresh?.tokenId && decodedRefresh?.exp) {
+                    await this.tokenBlacklistService.addToBlacklist(decodedRefresh.tokenId, decodedRefresh.exp);
+                }
             }
         } catch (e) {
             this.logger.error('Error en logout', e);

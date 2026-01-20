@@ -16,7 +16,7 @@ import {
  * Query para listar usuarios con filtros y paginación
  */
 export class ListarUsuariosQuery implements IQuery {
-  constructor(public readonly filtros: QueryUsuariosDto) {}
+    constructor(public readonly filtros: QueryUsuariosDto) {}
 }
 
 /**
@@ -24,98 +24,99 @@ export class ListarUsuariosQuery implements IQuery {
  */
 @QueryHandler(ListarUsuariosQuery)
 export class ListarUsuariosHandler
-  implements IQueryHandler<ListarUsuariosQuery, UsuariosPaginadosDto>
+    implements IQueryHandler<ListarUsuariosQuery, UsuariosPaginadosDto>
 {
-  constructor(
-    @Inject(USUARIO_REPOSITORY)
-    private readonly usuarioRepository: IUsuarioRepository,
-  ) {}
+    constructor(
+        @Inject(USUARIO_REPOSITORY)
+        private readonly usuarioRepository: IUsuarioRepository,
+    ) {}
 
-  async execute(query: ListarUsuariosQuery): Promise<UsuariosPaginadosDto> {
-    const { filtros } = query;
+    async execute(query: ListarUsuariosQuery): Promise<UsuariosPaginadosDto> {
+        const { filtros } = query;
 
-    const resultado = await this.usuarioRepository.findAll({
-      skip: filtros.skip,
-      take: filtros.take,
-      cursor: filtros.cursor,
-      where: {
-        rol: filtros.rol,
-        estado: filtros.estado,
-        eliminado: false,
-        reclutadorId: filtros.reclutadorId,
-        search: filtros.search,
-      },
-      orderBy: {
-        field: filtros.orderBy || 'fechaCreacion',
-        direction: filtros.orderDirection || 'desc',
-      },
-      includeReclutador: true,
-    });
+        const resultado = await this.usuarioRepository.findAll({
+            skip: filtros.skip,
+            take: filtros.take,
+            cursor: filtros.cursor,
+            where: {
+                rol: filtros.rol,
+                estado: filtros.estado,
+                eliminado: false,
+                reclutadorId: filtros.reclutadorId,
+                search: filtros.search,
+                cedula: filtros.cedula, // Búsqueda exacta por cédula (número)
+            },
+            orderBy: {
+                field: filtros.orderBy || 'fechaCreacion',
+                direction: filtros.orderDirection || 'desc',
+            },
+            includeReclutador: true,
+        });
 
-    // Mapear a DTOs
-    const data: UsuarioResponseDto[] = await Promise.all(
-      resultado.data.map(async (usuario) => {
-        let reclutador: UsuarioBasicoDto | null = null;
-        let reclutadorRol: Rol | null = null;
+        // Mapear a DTOs
+        const data: UsuarioResponseDto[] = await Promise.all(
+            resultado.data.map(async (usuario) => {
+                let reclutador: UsuarioBasicoDto | null = null;
+                let reclutadorRol: Rol | null = null;
 
-        if (usuario.reclutadorId) {
-          const reclutadorData = await this.usuarioRepository.findById(
-            usuario.reclutadorId,
-          );
-          if (reclutadorData) {
-            reclutadorRol = reclutadorData.rol;
-            reclutador = {
-              id: reclutadorData.id,
-              nombre: reclutadorData.nombre,
-              apellidos: reclutadorData.apellidos,
-              nombreCompleto: `${reclutadorData.nombre} ${reclutadorData.apellidos}`,
-              email: reclutadorData.email,
-              rol: reclutadorData.rol,
-            };
-          }
-        }
+                if (usuario.reclutadorId) {
+                    const reclutadorData = await this.usuarioRepository.findById(
+                        usuario.reclutadorId,
+                    );
+                    if (reclutadorData) {
+                        reclutadorRol = reclutadorData.rol;
+                        reclutador = {
+                            id: reclutadorData.id,
+                            nombre: reclutadorData.nombre,
+                            apellidos: reclutadorData.apellidos,
+                            nombreCompleto: `${reclutadorData.nombre} ${reclutadorData.apellidos}`,
+                            email: reclutadorData.email,
+                            rol: reclutadorData.rol,
+                        };
+                    }
+                }
 
-        const modeloNegocio = this.determinarModeloNegocio(
-          usuario.reclutadorId,
-          reclutadorRol,
+                const modeloNegocio = this.determinarModeloNegocio(
+                    usuario.reclutadorId,
+                    reclutadorRol,
+                );
+
+                return {
+                    id: usuario.id,
+                    cedula: usuario.cedula,
+                    nombre: usuario.nombre,
+                    apellidos: usuario.apellidos,
+                    nombreCompleto: `${usuario.nombre} ${usuario.apellidos}`,
+                    email: usuario.email,
+                    telefono: usuario.telefono,
+                    rol: usuario.rol,
+                    estado: usuario.estado,
+                    requiereCambioPassword: usuario.requiereCambioPassword,
+                    reclutadorId: usuario.reclutadorId,
+                    reclutador,
+                    fechaCreacion: usuario.fechaCreacion,
+                    ultimoLogin: usuario.ultimoLogin,
+                    fechaCambioEstado: usuario.fechaCambioEstado,
+                    modeloNegocio,
+                };
+            }),
         );
 
         return {
-          id: usuario.id,
-          cedula: usuario.cedula,
-          nombre: usuario.nombre,
-          apellidos: usuario.apellidos,
-          nombreCompleto: `${usuario.nombre} ${usuario.apellidos}`,
-          email: usuario.email,
-          telefono: usuario.telefono,
-          rol: usuario.rol,
-          estado: usuario.estado,
-          requiereCambioPassword: usuario.requiereCambioPassword,
-          reclutadorId: usuario.reclutadorId,
-          reclutador,
-          fechaCreacion: usuario.fechaCreacion,
-          ultimoLogin: usuario.ultimoLogin,
-          fechaCambioEstado: usuario.fechaCambioEstado,
-          modeloNegocio,
+            data,
+            total: resultado.total,
+            hasMore: resultado.hasMore,
+            nextCursor: resultado.nextCursor,
         };
-      }),
-    );
-
-    return {
-      data,
-      total: resultado.total,
-      hasMore: resultado.hasMore,
-      nextCursor: resultado.nextCursor,
-    };
-  }
-
-  private determinarModeloNegocio(
-    reclutadorId: string | null,
-    reclutadorRol: Rol | null,
-  ): '60_40' | '50_50' {
-    if (!reclutadorId || reclutadorRol === 'ADMIN') {
-      return '60_40';
     }
-    return '50_50';
-  }
+
+    private determinarModeloNegocio(
+        reclutadorId: string | null,
+        reclutadorRol: Rol | null,
+    ): '60_40' | '50_50' {
+        if (!reclutadorId || reclutadorRol === 'ADMIN') {
+            return '60_40';
+        }
+        return '50_50';
+    }
 }

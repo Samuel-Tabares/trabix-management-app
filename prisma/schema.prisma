@@ -127,7 +127,7 @@ enum EstadoPedidoStock {
 
 model Usuario {
   id                      String         @id @default(uuid())
-  cedula                  String         @unique
+  cedula                  Int            @unique
   nombre                  String
   apellidos               String
   email                   String         @unique

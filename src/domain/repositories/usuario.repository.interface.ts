@@ -26,7 +26,7 @@ export interface IUsuarioRepository extends IBaseRepository<Usuario, CreateUsuar
   /**
    * Busca un usuario por cédula
    */
-  findByCedula(cedula: string): Promise<Usuario | null>;
+  findByCedula(cedula: number): Promise<Usuario | null>;
 
   /**
    * Busca un usuario por email
@@ -104,7 +104,7 @@ export interface IUsuarioRepository extends IBaseRepository<Usuario, CreateUsuar
   /**
    * Verifica si existe cédula (excluyendo un ID)
    */
-  existsCedula(cedula: string, excludeId?: string): Promise<boolean>;
+  existsCedula(cedula: number, excludeId?: string): Promise<boolean>;
 
   /**
    * Verifica si existe email (excluyendo un ID)

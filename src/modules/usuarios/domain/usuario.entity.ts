@@ -15,7 +15,7 @@ import { DomainException } from '../../../domain/exceptions/domain.exception';
  */
 export class UsuarioEntity {
   readonly id: string;
-  readonly cedula: string;
+  readonly cedula: number;
   readonly nombre: string;
   readonly apellidos: string;
   readonly email: string;
@@ -177,7 +177,7 @@ export class UsuarioEntity {
  */
 export interface UsuarioEntityProps {
   id: string;
-  cedula: string;
+  cedula: number;
   nombre: string;
   apellidos: string;
   email: string;
@@ -201,7 +201,7 @@ export interface UsuarioEntityProps {
  * Props para crear un nuevo usuario
  */
 export interface CrearUsuarioProps {
-  cedula: string;
+  cedula: number;
   nombre: string;
   apellidos: string;
   email: string;
