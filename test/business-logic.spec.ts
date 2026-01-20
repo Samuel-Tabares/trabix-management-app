@@ -1,5 +1,5 @@
 /**
- * TESTS COMPLETOS DE LÓGICA DE NEGOCIO TRABIX
+ * TESTS COMPLETOS DE LÓGICA DE NEGOCIO TRABIX 'UNITARIOS'
  *
  * - Integra todas las configuraciones cargadas desde la DB.
  * - Muestra en consola los valores calculados.

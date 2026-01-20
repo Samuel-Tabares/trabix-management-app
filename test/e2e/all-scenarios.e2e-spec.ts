@@ -358,13 +358,12 @@ describe('TRABIX - Pruebas E2E Completas', () => {
     // =================================================================
     describe('3. LOTES', () => {
         async function crearVendedorTemp(suffix: string) {
-            const timestamp = Math.floor(Date.now() % 1_000_000_000); // últimos 9 dígitos del timestamp
-            const ced = Number(`${timestamp}${suffix.toString().padStart(2, '0')}`);
+            const cedula = '1' + Array.from({length: 9}, () => Math.floor(Math.random() * 10)).join(''); // crea cedula aleatoria comienza por 1, 10 digitos
             const admin = await prisma.usuario.findFirst({ where: { rol: 'ADMIN' } });
             return prisma.usuario.create({
                 data: {
-                    cedula: ced, nombre: 'Temp', apellidos: suffix,
-                    email: `${ced}@temp.com`, telefono: `399${Date.now().toString().slice(-7)}`, passwordHash: '$2a$12$temp',
+                    cedula: cedula, nombre: 'Temp', apellidos: suffix,
+                    email: `${cedula}@temp.com`, telefono: `399${Date.now().toString().slice(-7)}`, passwordHash: '$2a$12$temp',
                     requiereCambioPassword: false, rol: 'VENDEDOR', estado: 'ACTIVO', reclutadorId: admin!.id,
                 }
             });
