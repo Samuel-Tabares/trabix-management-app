@@ -10,7 +10,6 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
-    NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -209,9 +208,6 @@ export class UsuariosController {
     const usuario = await this.commandBus.execute(
       new CambiarEstadoCommand(id, cambiarEstadoDto.estado, admin.id),
     );
-      if (!usuario) {
-          throw new NotFoundException('Vendedor no encontrado');
-      }
     return this.queryBus.execute(new ObtenerUsuarioQuery(usuario.id));
   }
 
@@ -277,9 +273,6 @@ export class UsuariosController {
    * Mapea un usuario de Prisma a UsuarioResponseDto básico
    */
   private mapToResponse(usuario: any): Partial<UsuarioResponseDto> {
-      if (!usuario) {
-          throw new NotFoundException('Usuario no encontrado');
-      }
     return {
       id: usuario.id,
       cedula: usuario.cedula,
