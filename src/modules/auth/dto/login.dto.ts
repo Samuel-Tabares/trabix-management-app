@@ -1,5 +1,6 @@
-import {IsInt, IsNotEmpty, IsString, MinLength} from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 /**
  * DTO para login
@@ -7,9 +8,10 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class LoginDto {
     @ApiProperty({
-        description: 'Cédula del usuario',
-        example: '0000000001',
+        description: 'Cédula del usuario (número)',
+        example: 1234567890,
     })
+    @Type(() => Number)
     @IsInt({ message: 'La cédula debe ser numérica' })
     @IsNotEmpty({ message: 'La cédula es requerida' })
     cedula!: number;
