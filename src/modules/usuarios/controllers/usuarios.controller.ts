@@ -10,6 +10,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,9 +21,11 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 
 // DTOs
 import { CurrentUser, AuthenticatedUser, Roles } from '../../auth/decorators';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import {
     CreateUsuarioDto,
     UpdateUsuarioDto,
@@ -74,6 +78,7 @@ export class UsuariosController {
    * Crea un nuevo vendedor (solo admin)
    */
   @Post()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear vendedor (admin)' })
@@ -94,6 +99,8 @@ export class UsuariosController {
     @Body() createDto: CreateUsuarioDto,
     @CurrentUser() admin: AuthenticatedUser,
   ) {
+    if (!admin) throw new UnauthorizedException();
+
     const result = await this.commandBus.execute(
       new CrearUsuarioCommand(createDto, admin.id),
     );
@@ -110,6 +117,7 @@ export class UsuariosController {
    * Lista vendedores con filtros y paginación
    */
   @Get()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Listar vendedores' })
   @ApiResponse({
@@ -128,6 +136,7 @@ export class UsuariosController {
    * Obtiene el perfil del usuario autenticado
    */
   @Get('me')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener perfil propio' })
   @ApiResponse({
     status: 200,
@@ -137,6 +146,8 @@ export class UsuariosController {
   async obtenerPerfil(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<UsuarioResponseDto> {
+    if (!user) throw new UnauthorizedException();
+
     return this.queryBus.execute(new ObtenerPerfilQuery(user.id));
   }
 
@@ -145,6 +156,7 @@ export class UsuariosController {
    * Obtiene un vendedor por ID
    */
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Obtener vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
@@ -165,6 +177,7 @@ export class UsuariosController {
    * Actualiza los datos de un vendedor
    */
   @Patch(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Actualizar vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
@@ -180,6 +193,8 @@ export class UsuariosController {
     @Body() updateDto: UpdateUsuarioDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<UsuarioResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     const usuario = await this.commandBus.execute(
       new ActualizarUsuarioCommand(id, updateDto, admin.id),
     );
@@ -191,6 +206,7 @@ export class UsuariosController {
    * Cambia el estado de un vendedor (ACTIVO/INACTIVO)
    */
   @Patch(':id/estado')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Cambiar estado de vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
@@ -205,6 +221,8 @@ export class UsuariosController {
     @Body() cambiarEstadoDto: CambiarEstadoDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<UsuarioResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     const usuario = await this.commandBus.execute(
       new CambiarEstadoCommand(id, cambiarEstadoDto.estado, admin.id),
     );
@@ -216,6 +234,7 @@ export class UsuariosController {
    * Elimina un vendedor (soft delete)
    */
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Eliminar vendedor' })
@@ -235,6 +254,8 @@ export class UsuariosController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: AuthenticatedUser,
   ) {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(new EliminarUsuarioCommand(id, admin.id));
     return { message: 'Vendedor eliminado exitosamente' };
   }
@@ -244,6 +265,7 @@ export class UsuariosController {
    * Obtiene el árbol de jerarquía de un usuario
    */
   @Get(':id/jerarquia')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener árbol de jerarquía' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiResponse({
@@ -256,6 +278,8 @@ export class UsuariosController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<UsuarioJerarquiaDto> {
+    if (!user) throw new UnauthorizedException();
+
     // Verificar permisos según sección 21.2
     // ADMIN: puede ver cualquier jerarquía
     // RECLUTADOR: puede ver su rama (JERARQUIA_READ_BRANCH)

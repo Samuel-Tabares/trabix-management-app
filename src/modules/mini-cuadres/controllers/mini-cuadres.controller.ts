@@ -6,6 +6,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -15,7 +17,9 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
@@ -52,6 +56,7 @@ export class MiniCuadresController {
    * Obtiene el mini-cuadre de un lote
    */
   @Get('lote/:loteId')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener mini-cuadre de lote' })
   @ApiParam({ name: 'loteId', description: 'ID del lote' })
   @ApiResponse({
@@ -71,6 +76,7 @@ export class MiniCuadresController {
    * Confirma un mini-cuadre (admin)
    */
   @Post(':id/confirmar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirmar mini-cuadre (admin)' })
@@ -86,6 +92,8 @@ export class MiniCuadresController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<MiniCuadreResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(new ConfirmarMiniCuadreCommand(id, admin.id));
     return this.queryBus.execute(new ObtenerMiniCuadreQuery(id));
   }

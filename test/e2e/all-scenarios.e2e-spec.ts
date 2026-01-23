@@ -115,7 +115,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
         it('Cédula inexistente = 400', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/v1/auth/login')
-                .send({ cedula: 'NO-EXISTE', password: 'Test123!' });
+                .send({ cedula: 1002229933, password: 'Test123!' });
             expect(res.status).toBe(400);
         });
 
@@ -329,7 +329,7 @@ describe('TRABIX - Pruebas E2E Completas', () => {
                 .post('/api/v1/usuarios')
                 .set('Authorization', `Bearer ${tokens[1000000001]}`)
                 .send({
-                    cedula: 'PROHIBIDO', nombre: 'Test', apellidos: 'Test',
+                    cedula: 1000028831, nombre: 'Test', apellidos: 'Test',
                     email: 'prohibido@test.com', telefono: '3209999999', direccion: 'Dir',
                 });
             expect([400,401,403]).toContain(res.status);

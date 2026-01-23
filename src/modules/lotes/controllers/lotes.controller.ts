@@ -8,6 +8,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -17,7 +19,9 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
@@ -67,6 +71,7 @@ export class LotesController {
    * Crea un nuevo lote (solo admin)
    */
   @Post()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Crear lote (admin)' })
@@ -81,6 +86,8 @@ export class LotesController {
     @Body() createDto: CreateLoteDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<LoteResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     const lote = await this.commandBus.execute(
       new CrearLoteCommand(createDto, admin.id),
     );
@@ -92,6 +99,7 @@ export class LotesController {
    * Lista lotes con filtros y paginación
    */
   @Get()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Listar lotes' })
   @ApiResponse({
@@ -110,6 +118,7 @@ export class LotesController {
    * Obtiene un lote por ID
    */
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener lote' })
   @ApiParam({ name: 'id', description: 'ID del lote' })
   @ApiResponse({
@@ -132,6 +141,7 @@ export class LotesController {
    * Activa un lote (admin confirma pago de inversión)
    */
   @Post(':id/activar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activar lote (admin)' })
@@ -147,6 +157,8 @@ export class LotesController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<LoteResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(new ActivarLoteCommand(id, admin.id));
     return this.queryBus.execute(new ObtenerLoteQuery(id));
   }
@@ -156,6 +168,7 @@ export class LotesController {
    * Obtiene el resumen financiero de un lote
    */
   @Get(':id/resumen-financiero')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Resumen financiero del lote' })
   @ApiParam({ name: 'id', description: 'ID del lote' })
   @ApiResponse({

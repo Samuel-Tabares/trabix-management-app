@@ -8,6 +8,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -17,7 +19,9 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
@@ -65,6 +69,7 @@ export class EquipamientoController {
    * Solicitar equipamiento
    */
   @Post('solicitar')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Solicitar equipamiento' })
   @ApiResponse({ status: 201, type: EquipamientoResponseDto })
@@ -72,6 +77,8 @@ export class EquipamientoController {
     @Body() dto: SolicitarEquipamientoDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<EquipamientoResponseDto> {
+    if (!user) throw new UnauthorizedException();
+
     const equipamiento = await this.commandBus.execute(
       new SolicitarEquipamientoCommand(user.id, dto.tieneDeposito),
     );
@@ -83,6 +90,7 @@ export class EquipamientoController {
    * Listar equipamiento (admin)
    */
   @Get()
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Listar equipamiento (admin)' })
   @ApiResponse({ status: 200, type: EquipamientosPaginadosDto })
@@ -97,11 +105,14 @@ export class EquipamientoController {
    * Obtener mi equipamiento
    */
   @Get('me')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener mi equipamiento' })
   @ApiResponse({ status: 200, type: EquipamientoResponseDto })
   async obtenerMio(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<EquipamientoResponseDto | null> {
+    if (!user) throw new UnauthorizedException();
+
     return this.queryBus.execute(new ObtenerMiEquipamientoQuery(user.id));
   }
 
@@ -110,6 +121,7 @@ export class EquipamientoController {
    * Activar equipamiento (admin)
    */
   @Post(':id/activar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activar equipamiento (admin)' })
@@ -119,6 +131,8 @@ export class EquipamientoController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<EquipamientoResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(new ActivarEquipamientoCommand(id, admin.id));
     return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
   }
@@ -128,6 +142,7 @@ export class EquipamientoController {
    * Registrar pago mensualidad
    */
   @Post(':id/pagar-mensualidad')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Registrar pago mensualidad' })
   @ApiParam({ name: 'id', description: 'ID del equipamiento' })
@@ -144,6 +159,7 @@ export class EquipamientoController {
    * Reportar daño (admin)
    */
   @Post(':id/reportar-dano')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reportar daño (admin)' })
@@ -154,6 +170,8 @@ export class EquipamientoController {
     @Body() dto: ReportarDanoDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<EquipamientoResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(
       new ReportarDanoCommand(id, dto.tipoDano, admin.id),
     );
@@ -165,6 +183,7 @@ export class EquipamientoController {
    * Reportar pérdida (admin)
    */
   @Post(':id/reportar-perdida')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reportar pérdida (admin)' })
@@ -174,6 +193,8 @@ export class EquipamientoController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<EquipamientoResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(new ReportarPerdidaCommand(id, admin.id));
     return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
   }
@@ -183,6 +204,7 @@ export class EquipamientoController {
    * Registrar pago de daño
    */
   @Post(':id/pagar-dano')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Registrar pago de daño' })
   @ApiParam({ name: 'id', description: 'ID del equipamiento' })
@@ -193,20 +215,19 @@ export class EquipamientoController {
     await this.commandBus.execute(new PagarDanoCommand(id));
     return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
   }
-
-  /**
-   * POST /equipamiento/:id/devolver
-   * Devolver equipamiento
-   */
-  @Post(':id/devolver')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Devolver equipamiento' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async devolver(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<EquipamientoResponseDto> {
-    await this.commandBus.execute(new DevolverEquipamientoCommand(id));
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
+    /**
+     * POST /equipamiento/:id/devolver
+     * Devolver equipamiento
+     */
+    @Post(':id/devolver')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Devolver equipamiento' })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    async devolver(
+        @Param('id', ParseUUIDPipe) id: string,
+    ): Promise<EquipamientoResponseDto> {
+        await this.commandBus.execute(new DevolverEquipamientoCommand(id));
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
 }

@@ -8,6 +8,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -17,7 +19,9 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
@@ -60,6 +64,7 @@ export class CuadresController {
    * Lista cuadres con filtros y paginación
    */
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Listar cuadres' })
   @ApiResponse({
     status: 200,
@@ -70,6 +75,8 @@ export class CuadresController {
     @Query() queryDto: QueryCuadresDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<CuadresPaginadosDto> {
+    if (!user) throw new UnauthorizedException();
+
     // Si no es admin, solo ve sus propios cuadres
     if (user.rol !== 'ADMIN') {
       queryDto.vendedorId = user.id;
@@ -82,6 +89,7 @@ export class CuadresController {
    * Obtiene un cuadre por ID
    */
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener cuadre' })
   @ApiParam({ name: 'id', description: 'ID del cuadre' })
   @ApiResponse({
@@ -101,6 +109,7 @@ export class CuadresController {
    * Confirma un cuadre como exitoso (admin)
    */
   @Post(':id/confirmar')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Confirmar cuadre exitoso (admin)' })
@@ -117,6 +126,8 @@ export class CuadresController {
     @Body() dto: ConfirmarCuadreDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<CuadreResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(
       new ConfirmarCuadreCommand(id, dto.montoRecibido, admin.id),
     );

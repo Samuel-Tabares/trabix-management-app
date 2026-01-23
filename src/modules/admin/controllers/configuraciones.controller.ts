@@ -10,6 +10,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -19,7 +21,9 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
 
 // DTOs
@@ -54,6 +58,7 @@ import {
 @ApiTags('Admin - Configuraciones')
 @ApiBearerAuth('access-token')
 @Controller('admin/configuraciones')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN')
 export class ConfiguracionesController {
   constructor(
@@ -144,6 +149,8 @@ export class ConfiguracionesController {
     @Body() dto: ModificarConfiguracionDto,
     @CurrentUser() admin: AuthenticatedUser,
   ): Promise<ConfiguracionResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
     await this.commandBus.execute(
       new ModificarConfiguracionCommand(clave, dto.valor, admin.id, dto.motivo),
     );
@@ -158,6 +165,7 @@ export class ConfiguracionesController {
 @ApiTags('Admin - Tipos de Insumo')
 @ApiBearerAuth('access-token')
 @Controller('admin/tipos-insumo')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN')
 export class TiposInsumoController {
   constructor(
