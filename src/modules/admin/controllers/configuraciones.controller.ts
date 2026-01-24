@@ -33,7 +33,7 @@ import {
     CrearTipoInsumoDto,
     ModificarTipoInsumoDto,
     TipoInsumoResponseDto,
-} from '../application/dto';
+} from '../../admin/application/dto';
 
 // Commands
 import {
@@ -41,7 +41,7 @@ import {
     CrearTipoInsumoCommand,
     ModificarTipoInsumoCommand,
     DesactivarTipoInsumoCommand,
-} from '../application/commands';
+} from '../../admin/application/commands';
 
 // Queries
 import {
@@ -49,7 +49,7 @@ import {
     ObtenerConfiguracionQuery,
     ObtenerHistorialConfiguracionQuery,
     ListarTiposInsumoQuery,
-} from '../application/queries';
+} from '../../admin/application/queries';
 
 /**
  * Controller de Configuraciones

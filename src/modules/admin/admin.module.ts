@@ -8,7 +8,7 @@ import {
     ConfiguracionesController,
     TiposInsumoController,
     DashboardController,
-} from './controllers';
+} from '../admin/controllers';
 
 // Domain
 import {
@@ -16,7 +16,7 @@ import {
     CONFIGURACION_REPOSITORY,
     TIPO_INSUMO_REPOSITORY,
     STOCK_ADMIN_REPOSITORY,
-} from './domain/repositories';
+} from '../admin/domain/repositories';
 
 // Infrastructure
 import {
@@ -24,11 +24,11 @@ import {
     PrismaConfiguracionRepository,
     PrismaTipoInsumoRepository,
     PrismaStockAdminRepository,
-} from './infrastructure';
+} from '../admin/infrastructure';
 
 // Application
-import { AdminCommandHandlers } from './application/commands';
-import { AdminQueryHandlers } from './application/queries';
+import { AdminCommandHandlers } from '../admin/application/commands';
+import { AdminQueryHandlers } from '../admin/application/queries';
 
 /**
  * Módulo de Admin
