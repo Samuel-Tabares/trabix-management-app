@@ -1,9 +1,10 @@
 import {
-    Injectable,
-    UnauthorizedException,
-    ForbiddenException,
-    Logger,
-    BadRequestException,
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+  Logger,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -11,279 +12,534 @@ import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import { TokenBlacklistService } from './token-blacklist.service';
-import { LoginDto, ChangePasswordDto, AuthResponseDto, UserResponseDto } from '../dto';
+import { LoginDto } from '../dto/login.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { AuthResponseDto, UserResponseDto } from '../dto/auth-response.dto';
+import { ResetPasswordResponseDto } from '../dto/reset-password.dto';
+
 import { Usuario, Rol } from '@prisma/client';
 
 /**
  * Payload del Access Token
  */
 export interface AccessTokenPayload {
-    sub: string;
-    rol: Rol;
-    jti: string;
+  sub: string;
+  rol: Rol;
+  jti: string;
 }
 
 /**
  * Payload del Refresh Token
  */
 export interface RefreshTokenPayload {
-    sub: string;
-    tokenId: string;
+  sub: string;
+  tokenId: string;
+}
+
+/**
+ * Configuración de bloqueo progresivo
+ * Basado en cantidad de intentos fallidos acumulados
+ */
+interface LockoutConfig {
+  minAttempts: number;
+  maxAttempts: number;
+  durationMinutes: number;
+  requiresAdmin: boolean;
 }
 
 /**
  * Servicio de autenticación
+ * Implementa bloqueo progresivo para protección contra ataques de fuerza bruta
  */
 @Injectable()
 export class AuthService {
-    private readonly logger = new Logger(AuthService.name);
-    private readonly MAX_FAILED_ATTEMPTS = 5;
-    private readonly LOCKOUT_DURATION_MINUTES = 15;
+  private readonly logger = new Logger(AuthService.name);
 
-    constructor(
-        private readonly prisma: PrismaService,
-        private readonly jwtService: JwtService,
-        private readonly configService: ConfigService,
-        private readonly tokenBlacklistService: TokenBlacklistService,
-    ) {}
+  /**
+   * Configuración de bloqueo progresivo
+   * - 5 intentos: 15 minutos
+   * - 10 intentos: 1 hora
+   * - 15 intentos: 24 horas
+   * - 20+ intentos: Requiere desbloqueo por admin
+   */
+  private readonly LOCKOUT_LEVELS: LockoutConfig[] = [
+    { minAttempts: 5, maxAttempts: 9, durationMinutes: 15, requiresAdmin: false },
+    { minAttempts: 10, maxAttempts: 14, durationMinutes: 60, requiresAdmin: false },
+    { minAttempts: 15, maxAttempts: 19, durationMinutes: 1440, requiresAdmin: false }, // 24 horas
+    { minAttempts: 20, maxAttempts: Infinity, durationMinutes: 0, requiresAdmin: true },
+  ];
 
-    /**
-     * LOGIN
-     */
-    async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-        const { cedula, password } = loginDto;
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
+  ) {}
 
-        if (!cedula || !password) {
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
+  /**
+   * LOGIN
+   * Implementa bloqueo progresivo según cantidad de intentos fallidos
+   */
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const { cedula, password } = loginDto;
 
-        const user = await this.prisma.usuario.findUnique({
-            where: { cedula },
-        });
-
-        if (!user || user.eliminado) {
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
-
-        if (user.estado === 'INACTIVO') {
-            throw new ForbiddenException('Usuario inactivo');
-        }
-
-        if (user.bloqueadoHasta && user.bloqueadoHasta > new Date()) {
-            throw new ForbiddenException('Cuenta bloqueada temporalmente');
-        }
-
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isPasswordValid) {
-            await this.handleFailedLogin(user);
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
-
-        await this.prisma.usuario.update({
-            where: { id: user.id },
-            data: {
-                intentosFallidos: 0,
-                bloqueadoHasta: null,
-                ultimoLogin: new Date(),
-            },
-        });
-
-        return this.generateAuthResponse(user);
+    if (!cedula || !password) {
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    /**
-     * REFRESH TOKEN
-     */
-    async refreshTokens(refreshToken?: string): Promise<AuthResponseDto> {
-        if (!refreshToken) {
-            throw new UnauthorizedException('Token inválido');
-        }
+    const user = await this.prisma.usuario.findUnique({
+      where: { cedula },
+    });
 
-        let payload: RefreshTokenPayload & { exp: number };
-        try {
-            payload = this.jwtService.verify(refreshToken, {
-                secret: this.configService.get<string>('jwt.refreshSecret'),
-            });
-        } catch {
-            throw new UnauthorizedException('Token inválido');
-        }
-
-        if (!payload.tokenId) {
-            throw new UnauthorizedException('Token inválido');
-        }
-
-        const blacklisted = await this.tokenBlacklistService.isBlacklisted(payload.tokenId);
-        if (blacklisted) {
-            throw new UnauthorizedException('Token revocado');
-        }
-
-        const user = await this.prisma.usuario.findUnique({
-            where: { id: payload.sub },
-        });
-
-        if (!user || user.eliminado || user.estado === 'INACTIVO') {
-            throw new UnauthorizedException('Usuario no válido');
-        }
-
-        if (!user.refreshTokenHash) {
-            throw new UnauthorizedException('Sesión inválida');
-        }
-
-        const valid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
-        if (!valid) {
-            throw new UnauthorizedException('Token inválido');
-        }
-
-        await this.tokenBlacklistService.addToBlacklist(payload.tokenId, payload.exp);
-
-        return this.generateAuthResponse(user);
+    if (!user || user.eliminado) {
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    /**
-     * LOGOUT
-     */
-    async logout(userId: string, accessToken: string, refreshToken?: string): Promise<void> {
-        try {
-            // Invalidar refresh token en BD
-            await this.prisma.usuario.update({
-                where: { id: userId },
-                data: { refreshTokenHash: null },
-            });
-
-            // Agregar access token a blacklist
-            const decodedAccess: any = this.jwtService.decode(accessToken);
-            if (decodedAccess?.jti && decodedAccess?.exp) {
-                await this.tokenBlacklistService.addToBlacklist(decodedAccess.jti, decodedAccess.exp);
-            }
-
-            // Agregar refresh token a blacklist si está presente
-            if (refreshToken) {
-                const decodedRefresh: any = this.jwtService.decode(refreshToken);
-                if (decodedRefresh?.tokenId && decodedRefresh?.exp) {
-                    await this.tokenBlacklistService.addToBlacklist(decodedRefresh.tokenId, decodedRefresh.exp);
-                }
-            }
-        } catch (e) {
-            this.logger.error('Error en logout', e);
-        }
+    if (user.estado === 'INACTIVO') {
+      throw new ForbiddenException('Usuario inactivo. Contacte al administrador.');
     }
 
-    /**
-     * CHANGE PASSWORD
-     */
-    async changePassword(
-        userId: string,
-        dto: ChangePasswordDto,
-    ): Promise<void> {
-        const user = await this.prisma.usuario.findUnique({
-            where: { id: userId },
-        });
+    // Verificar si la cuenta está bloqueada
+    const lockoutStatus = this.checkLockoutStatus(user);
+    if (lockoutStatus.isLocked) {
+      throw new ForbiddenException(lockoutStatus.message);
+    }
 
-        if (!user) {
-            throw new UnauthorizedException();
-        }
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      await this.handleFailedLogin(user);
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
 
-        const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
-        if (!valid) {
-            throw new BadRequestException('Contraseña incorrecta');
-        }
+    // Login exitoso: resetear contador de intentos fallidos
+    await this.prisma.usuario.update({
+      where: { id: user.id },
+      data: {
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
+        ultimoLogin: new Date(),
+      },
+    });
 
-        const hash = await bcrypt.hash(
-            dto.newPassword,
-            this.configService.get<number>('security.bcryptRounds', 12),
+    return this.generateAuthResponse(user);
+  }
+
+  /**
+   * REFRESH TOKEN
+   */
+  async refreshTokens(refreshToken: string): Promise<AuthResponseDto> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    let payload: RefreshTokenPayload & { exp: number };
+    try {
+      payload = this.jwtService.verify(refreshToken, {
+        secret: this.configService.get<string>('jwt.refreshSecret'),
+      });
+    } catch {
+      throw new UnauthorizedException('Token inválido o expirado');
+    }
+
+    if (!payload.tokenId) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    const blacklisted = await this.tokenBlacklistService.isBlacklisted(
+      payload.tokenId,
+    );
+    if (blacklisted) {
+      throw new UnauthorizedException('Token revocado');
+    }
+
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: payload.sub },
+    });
+
+    if (!user || user.eliminado || user.estado === 'INACTIVO') {
+      throw new UnauthorizedException('Usuario no válido');
+    }
+
+    if (!user.refreshTokenHash) {
+      throw new UnauthorizedException('Sesión inválida. Inicie sesión nuevamente.');
+    }
+
+    const valid = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    if (!valid) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    // Invalidar el refresh token anterior
+    await this.tokenBlacklistService.addToBlacklist(
+      payload.tokenId,
+      payload.exp,
+    );
+
+    return this.generateAuthResponse(user);
+  }
+
+  /**
+   * LOGOUT
+   */
+  async logout(
+    userId: string,
+    accessToken: string,
+    refreshToken?: string,
+  ): Promise<void> {
+    try {
+      // Invalidar refresh token en BD
+      await this.prisma.usuario.update({
+        where: { id: userId },
+        data: { refreshTokenHash: null },
+      });
+
+      // Agregar access token a blacklist
+      const decodedAccess = this.jwtService.decode(accessToken) as {
+        jti?: string;
+        exp?: number;
+      } | null;
+      if (decodedAccess?.jti && decodedAccess?.exp) {
+        await this.tokenBlacklistService.addToBlacklist(
+          decodedAccess.jti,
+          decodedAccess.exp,
         );
+      }
 
-        await this.prisma.usuario.update({
-            where: { id: userId },
-            data: {
-                passwordHash: hash,
-                requiereCambioPassword: false,
-            },
-        });
-    }
-
-    async validateUserById(userId: string): Promise<Usuario | null> {
-        const user = await this.prisma.usuario.findUnique({
-            where: { id: userId },
-        });
-
-        if (!user || user.eliminado || user.estado === 'INACTIVO') {
-            return null;
+      // Agregar refresh token a blacklist si está presente
+      if (refreshToken) {
+        const decodedRefresh = this.jwtService.decode(refreshToken) as {
+          tokenId?: string;
+          exp?: number;
+        } | null;
+        if (decodedRefresh?.tokenId && decodedRefresh?.exp) {
+          await this.tokenBlacklistService.addToBlacklist(
+            decodedRefresh.tokenId,
+            decodedRefresh.exp,
+          );
         }
+      }
+    } catch (e) {
+      this.logger.error('Error en logout', e);
+    }
+  }
 
-        return user;
+  /**
+   * CHANGE PASSWORD
+   */
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    async isTokenBlacklisted(jti: string): Promise<boolean> {
-        return this.tokenBlacklistService.isBlacklisted(jti);
+    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new BadRequestException('Contraseña actual incorrecta');
     }
 
-    private async handleFailedLogin(user: Usuario): Promise<void> {
-        const attempts = user.intentosFallidos + 1;
-
-        const data: any = { intentosFallidos: attempts };
-
-        if (attempts >= this.MAX_FAILED_ATTEMPTS) {
-            data.bloqueadoHasta = new Date(
-                Date.now() + this.LOCKOUT_DURATION_MINUTES * 60 * 1000,
-            );
-        }
-
-        await this.prisma.usuario.update({
-            where: { id: user.id },
-            data,
-        });
+    // Validar que la nueva contraseña sea diferente a la actual
+    const isSamePassword = await bcrypt.compare(dto.newPassword, user.passwordHash);
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'La nueva contraseña debe ser diferente a la actual',
+      );
     }
 
-    private async generateAuthResponse(user: Usuario): Promise<AuthResponseDto> {
-        const accessJti = uuidv4();
-        const refreshJti = uuidv4();
+    const hash = await bcrypt.hash(
+      dto.newPassword,
+      this.configService.get<number>('security.bcryptRounds', 12),
+    );
 
-        const accessToken = this.jwtService.sign(
-            {
-                sub: user.id,
-                rol: user.rol,
-                jti: accessJti,
-            },
-            {
-                secret: this.configService.get<string>('jwt.secret'),
-                expiresIn: this.configService.get<string>('jwt.accessExpiration', '15m'),
-            },
-        );
+    await this.prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        passwordHash: hash,
+        requiereCambioPassword: false,
+        // Invalidar sesiones existentes al cambiar contraseña
+        refreshTokenHash: null,
+      },
+    });
+  }
 
-        const refreshToken = this.jwtService.sign(
-            {
-                sub: user.id,
-                tokenId: refreshJti,
-            },
-            {
-                secret: this.configService.get<string>('jwt.refreshSecret'),
-                expiresIn: this.configService.get<string>('jwt.refreshExpiration', '7d'),
-            },
-        );
+  /**
+   * RESET PASSWORD (Admin only)
+   * Genera una contraseña temporal para un usuario
+   */
+  async resetPassword(
+    usuarioId: string,
+    adminId: string,
+  ): Promise<ResetPasswordResponseDto> {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+    });
 
-        await this.prisma.usuario.update({
-            where: { id: user.id },
-            data: {
-                refreshTokenHash: await bcrypt.hash(refreshToken, 10),
-            },
-        });
-
-        const userResponse: UserResponseDto = {
-            id: user.id,
-            nombre: user.nombre,
-            apellidos: user.apellidos,
-            email: user.email,
-            rol: user.rol,
-            requiereCambioPassword: user.requiereCambioPassword,
-        };
-
-        return {
-            accessToken,
-            refreshToken,
-            tokenType: 'Bearer',
-            expiresIn: 900,
-            user: userResponse,
-        };
+    if (!user || user.eliminado) {
+      throw new NotFoundException('Usuario no encontrado');
     }
+
+    // Verificar que no se esté reseteando un admin (solo otro admin podría)
+    // Por seguridad, un admin no puede resetear la contraseña de otro admin
+    if (user.rol === 'ADMIN' && user.id !== adminId) {
+      throw new ForbiddenException(
+        'No se puede resetear la contraseña de otro administrador',
+      );
+    }
+
+    // Generar contraseña temporal segura
+    const passwordTemporal = this.generateTemporaryPassword();
+
+    const hash = await bcrypt.hash(
+      passwordTemporal,
+      this.configService.get<number>('security.bcryptRounds', 12),
+    );
+
+    await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        passwordHash: hash,
+        requiereCambioPassword: true,
+        // Resetear bloqueos
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
+        // Invalidar sesiones existentes
+        refreshTokenHash: null,
+      },
+    });
+
+    this.logger.log(
+      `Admin ${adminId} reseteó la contraseña del usuario ${usuarioId}`,
+    );
+
+    return {
+      message: 'Contraseña reseteada exitosamente',
+      passwordTemporal,
+      usuarioId: user.id,
+      nombreUsuario: `${user.nombre} ${user.apellidos}`,
+    };
+  }
+
+  /**
+   * DESBLOQUEAR USUARIO (Admin only)
+   * Desbloquea un usuario que fue bloqueado por muchos intentos fallidos
+   */
+  async desbloquearUsuario(usuarioId: string, adminId: string): Promise<void> {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+    });
+
+    if (!user || user.eliminado) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    await this.prisma.usuario.update({
+      where: { id: usuarioId },
+      data: {
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
+      },
+    });
+
+    this.logger.log(`Admin ${adminId} desbloqueó al usuario ${usuarioId}`);
+  }
+
+  /**
+   * Valida un usuario por ID
+   */
+  async validateUserById(userId: string): Promise<Usuario | null> {
+    const user = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || user.eliminado || user.estado === 'INACTIVO') {
+      return null;
+    }
+
+    return user;
+  }
+
+  /**
+   * Verifica si un token está en blacklist
+   */
+  async isTokenBlacklisted(jti: string): Promise<boolean> {
+    return this.tokenBlacklistService.isBlacklisted(jti);
+  }
+
+  /**
+   * Verifica el estado de bloqueo de un usuario
+   */
+  private checkLockoutStatus(user: Usuario): {
+    isLocked: boolean;
+    message: string;
+  } {
+    // Verificar si requiere desbloqueo por admin (20+ intentos)
+    const permanentLockout = this.LOCKOUT_LEVELS.find(
+      (level) => level.requiresAdmin && user.intentosFallidos >= level.minAttempts,
+    );
+
+    if (permanentLockout) {
+      return {
+        isLocked: true,
+        message:
+          'Cuenta bloqueada por seguridad. Contacte al administrador para desbloquearla.',
+      };
+    }
+
+    // Verificar bloqueo temporal
+    if (user.bloqueadoHasta && user.bloqueadoHasta > new Date()) {
+      const minutosRestantes = Math.ceil(
+        (user.bloqueadoHasta.getTime() - Date.now()) / 60000,
+      );
+
+      let tiempoFormateado: string;
+      if (minutosRestantes >= 60) {
+        const horas = Math.floor(minutosRestantes / 60);
+        const minutos = minutosRestantes % 60;
+        tiempoFormateado =
+          minutos > 0 ? `${horas}h ${minutos}min` : `${horas} hora(s)`;
+      } else {
+        tiempoFormateado = `${minutosRestantes} minuto(s)`;
+      }
+
+      return {
+        isLocked: true,
+        message: `Cuenta bloqueada temporalmente. Intente nuevamente en ${tiempoFormateado}.`,
+      };
+    }
+
+    return { isLocked: false, message: '' };
+  }
+
+  /**
+   * Maneja un intento de login fallido
+   * Implementa bloqueo progresivo
+   */
+  private async handleFailedLogin(user: Usuario): Promise<void> {
+    const attempts = user.intentosFallidos + 1;
+
+    // Buscar el nivel de bloqueo correspondiente
+    const lockoutLevel = this.LOCKOUT_LEVELS.find(
+      (level) => attempts >= level.minAttempts && attempts <= level.maxAttempts,
+    );
+
+    const updateData: {
+      intentosFallidos: number;
+      bloqueadoHasta?: Date | null;
+    } = {
+      intentosFallidos: attempts,
+    };
+
+    if (lockoutLevel && !lockoutLevel.requiresAdmin) {
+      // Bloqueo temporal
+      updateData.bloqueadoHasta = new Date(
+        Date.now() + lockoutLevel.durationMinutes * 60 * 1000,
+      );
+
+      this.logger.warn(
+        `Usuario ${user.id} bloqueado por ${lockoutLevel.durationMinutes} minutos ` +
+          `(${attempts} intentos fallidos)`,
+      );
+    } else if (lockoutLevel?.requiresAdmin) {
+      // Bloqueo permanente (requiere admin)
+      this.logger.warn(
+        `Usuario ${user.id} bloqueado permanentemente (${attempts} intentos fallidos). ` +
+          `Requiere desbloqueo por administrador.`,
+      );
+    }
+
+    await this.prisma.usuario.update({
+      where: { id: user.id },
+      data: updateData,
+    });
+  }
+
+  /**
+   * Genera una contraseña temporal segura
+   * Formato: 3 letras mayúsculas + 3 números + 2 caracteres especiales
+   */
+  private generateTemporaryPassword(): string {
+    const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Sin I, O para evitar confusión
+    const numbers = '23456789'; // Sin 0, 1 para evitar confusión
+    const special = '@$!%*?&';
+
+    let password = '';
+
+    // 3 letras mayúsculas
+    for (let i = 0; i < 3; i++) {
+      password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    }
+
+    // 3 números
+    for (let i = 0; i < 3; i++) {
+      password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+
+    // 2 caracteres especiales
+    for (let i = 0; i < 2; i++) {
+      password += special.charAt(Math.floor(Math.random() * special.length));
+    }
+
+    // Mezclar los caracteres
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  }
+
+  /**
+   * Genera la respuesta de autenticación con tokens
+   */
+  private async generateAuthResponse(user: Usuario): Promise<AuthResponseDto> {
+    const accessJti = uuidv4();
+    const refreshJti = uuidv4();
+
+    const accessToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        rol: user.rol,
+        jti: accessJti,
+      },
+      {
+        secret: this.configService.get<string>('jwt.secret'),
+        expiresIn: this.configService.get<string>('jwt.accessExpiration', '15m'),
+      },
+    );
+
+    const refreshToken = this.jwtService.sign(
+      {
+        sub: user.id,
+        tokenId: refreshJti,
+      },
+      {
+        secret: this.configService.get<string>('jwt.refreshSecret'),
+        expiresIn: this.configService.get<string>('jwt.refreshExpiration', '7d'),
+      },
+    );
+
+    await this.prisma.usuario.update({
+      where: { id: user.id },
+      data: {
+        refreshTokenHash: await bcrypt.hash(refreshToken, 10),
+      },
+    });
+
+    const userResponse: UserResponseDto = {
+      id: user.id,
+      nombre: user.nombre,
+      apellidos: user.apellidos,
+      email: user.email,
+      rol: user.rol,
+      requiereCambioPassword: user.requiereCambioPassword,
+    };
+
+    return {
+      accessToken,
+      refreshToken,
+      tokenType: 'Bearer',
+      expiresIn: 900,
+      user: userResponse,
+    };
+  }
 }

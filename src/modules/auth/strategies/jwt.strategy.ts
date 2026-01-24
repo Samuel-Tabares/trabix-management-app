@@ -7,27 +7,30 @@ import { AuthService, AccessTokenPayload } from '../services/auth.service';
 /**
  * JWT Strategy para Passport
  * Según sección 22.1 del documento
- * 
+ *
  * Extrae el token del header Authorization: Bearer <token>
  * Valida el token y verifica que no esté en blacklist
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-      configService: ConfigService,
+    configService: ConfigService,
     private readonly authService: AuthService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('jwt.secret'),
-      passReqToCallback: true,
+      // NOTA: No usar passReqToCallback: true porque cambia la firma de validate()
     });
   }
 
   /**
    * Valida el payload del JWT
    * Se ejecuta después de que Passport verifica la firma y expiración
+   *
+   * @param payload - Payload decodificado del JWT
+   * @returns Usuario autenticado para request.user
    */
   async validate(payload: AccessTokenPayload) {
     // Verificar que tenga la estructura de access token (jti)
