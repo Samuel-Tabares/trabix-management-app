@@ -8,7 +8,6 @@ import { ListarUsuariosHandler } from './listar-usuarios.query';
 import { ObtenerJerarquiaHandler } from './obtener-jerarquia.query';
 import { ObtenerPerfilHandler } from './obtener-perfil.query';
 
-
 /**
  * Array de todos los query handlers del módulo usuarios
  */

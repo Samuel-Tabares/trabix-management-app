@@ -18,19 +18,16 @@ import { UsuarioQueryHandlers } from './application/queries';
 /**
  * Módulo de Usuarios
  * Según sección 20.3 del documento
- * 
+ *
  * Gestiona:
- * - Creación de vendedores
+ * - Creación de vendedores (con promoción automática a RECLUTADOR)
  * - Listado y consulta de usuarios
  * - Cambio de estado (ACTIVO/INACTIVO)
- * - Eliminación (soft delete)
+ * - Eliminación (soft delete) y restauración
  * - Jerarquías de reclutamiento
  */
 @Module({
-  imports: [
-    CqrsModule,
-    ConfigModule,
-  ],
+  imports: [CqrsModule, ConfigModule],
   controllers: [UsuariosController],
   providers: [
     // Repository
@@ -46,9 +43,6 @@ import { UsuarioQueryHandlers } from './application/queries';
     // Query Handlers
     ...UsuarioQueryHandlers,
   ],
-  exports: [
-    USUARIO_REPOSITORY,
-    PrismaUsuarioRepository,
-  ],
+  exports: [USUARIO_REPOSITORY, PrismaUsuarioRepository],
 })
 export class UsuariosModule {}

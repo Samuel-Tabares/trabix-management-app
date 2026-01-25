@@ -1,9 +1,9 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
-    UsuarioJerarquia,
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
+  UsuarioJerarquia,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UsuarioJerarquiaDto, UsuarioBasicoDto } from '../dto';
@@ -38,19 +38,15 @@ export class ObtenerJerarquiaHandler
     // Verificar que el usuario existe
     const usuario = await this.usuarioRepository.findById(usuarioId);
     if (!usuario) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     if (usuario.eliminado) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     // Obtener la jerarquía completa

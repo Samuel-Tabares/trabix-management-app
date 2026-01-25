@@ -23,7 +23,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthResponseDto, MessageResponseDto } from './dto/auth-response.dto';
-import { ResetPasswordResponseDto, ResetPasswordDto } from './dto/reset-password.dto';
+import { ResetPasswordResponseDto } from './dto/reset-password.dto';
 
 import { Public } from './decorators/public.decorator';
 import { Roles } from './decorators/roles.decorator';

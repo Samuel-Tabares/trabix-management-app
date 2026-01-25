@@ -316,41 +316,6 @@ export class ObtenerDeficitHandler
     }
 }
 
-// ========== ObtenerStockReservadoQuery ==========
-
-export class ObtenerStockReservadoQuery implements IQuery {}
-
-@QueryHandler(ObtenerStockReservadoQuery)
-export class ObtenerStockReservadoHandler
-    implements IQueryHandler<ObtenerStockReservadoQuery>
-{
-    constructor(private readonly prisma: PrismaService) {}
-
-    async execute(): Promise<any[]> {
-        // Obtener tandas inactivas con su lote y vendedor
-        const tandas = await this.prisma.tanda.findMany({
-            where: { estado: 'INACTIVA' },
-            include: {
-                lote: {
-                    include: {
-                        vendedor: { select: { nombre: true, apellidos: true } },
-                    },
-                },
-            },
-            orderBy: { fechaCreacion: 'desc' },
-        });
-
-        return tandas.map((t) => ({
-            loteId: t.loteId,
-            tandaId: t.id,
-            vendedorNombre: `${t.lote.vendedor.nombre} ${t.lote.vendedor.apellidos}`,
-            cantidadReservada: t.stockInicial,
-            tandaNumero: t.numero,
-            fechaCreacion: t.fechaCreacion,
-        }));
-    }
-}
-
 // ========== ResumenDashboardQuery ==========
 
 export class ResumenDashboardQuery implements IQuery {}
@@ -533,7 +498,6 @@ export const AdminQueryHandlers = [
     ListarTiposInsumoHandler,
     ObtenerStockAdminHandler,
     ObtenerDeficitHandler,
-    ObtenerStockReservadoHandler,
     ResumenDashboardHandler,
     VentasPeriodoHandler,
     VendedoresActivosHandler,

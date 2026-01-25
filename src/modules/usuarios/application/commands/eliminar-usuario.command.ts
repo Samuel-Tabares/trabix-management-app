@@ -43,11 +43,9 @@ export class EliminarUsuarioHandler
     // Buscar usuario
     const usuario = await this.usuarioRepository.findById(usuarioId);
     if (!usuario) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     // Crear entidad de dominio para validaciones
@@ -63,9 +61,7 @@ export class EliminarUsuarioHandler
     // Según documento: "esto elimina jerarquías inferiores asociadas"
     await this.eliminarJerarquiaInferior(usuarioId);
 
-    this.logger.log(
-      `Usuario ${usuarioId} eliminado por admin ${adminId}`,
-    );
+    this.logger.log(`Usuario ${usuarioId} eliminado por admin ${adminId}`);
 
     return usuarioEliminado;
   }

@@ -4,8 +4,8 @@ import { Usuario } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CreateUsuarioDto } from '../dto';
@@ -31,6 +31,8 @@ export interface CrearUsuarioResult {
 /**
  * Handler del comando CrearUsuario
  * Según sección 1.2: Admin crea vendedor con contraseña temporal
+ * Según sección 1.1: RECLUTADOR se genera automáticamente al registrar
+ * un nuevo vendedor con el idReclutador respectivo
  */
 @CommandHandler(CrearUsuarioCommand)
 export class CrearUsuarioHandler
@@ -68,7 +70,9 @@ export class CrearUsuarioHandler
     }
 
     // Validar que no exista usuario con mismo teléfono
-    const existeTelefono = await this.usuarioRepository.existsByTelefono(data.telefono);
+    const existeTelefono = await this.usuarioRepository.existsByTelefono(
+      data.telefono,
+    );
     if (existeTelefono) {
       throw new DomainException(
         'USR_004',
@@ -106,11 +110,26 @@ export class CrearUsuarioHandler
       }
 
       reclutadorId = data.reclutadorId;
+
+      // ============================================================
+      // PROMOCIÓN AUTOMÁTICA A RECLUTADOR
+      // Según sección 1.1: RECLUTADOR se genera automáticamente
+      // al registrar un nuevo vendedor con el idReclutador respectivo
+      // ============================================================
+      if (reclutador.rol === 'VENDEDOR') {
+        await this.usuarioRepository.promoverAReclutador(reclutador.id);
+        this.logger.log(
+          `Vendedor ${reclutador.id} (${reclutador.email}) promovido a RECLUTADOR automáticamente`,
+        );
+      }
     }
 
     // Generar contraseña temporal
     const passwordTemporal = this.generarPasswordTemporal();
-    const bcryptRounds = this.configService.get<number>('security.bcryptRounds', 12);
+    const bcryptRounds = this.configService.get<number>(
+      'security.bcryptRounds',
+      12,
+    );
     const passwordHash = await bcrypt.hash(passwordTemporal, bcryptRounds);
 
     // Crear usuario
@@ -148,7 +167,9 @@ export class CrearUsuarioHandler
 
     // 2 letras mayúsculas
     for (let i = 0; i < 2; i++) {
-      password += mayusculas.charAt(Math.floor(Math.random() * mayusculas.length));
+      password += mayusculas.charAt(
+        Math.floor(Math.random() * mayusculas.length),
+      );
     }
 
     // 4 números
@@ -158,7 +179,9 @@ export class CrearUsuarioHandler
 
     // 2 caracteres especiales
     for (let i = 0; i < 2; i++) {
-      password += especiales.charAt(Math.floor(Math.random() * especiales.length));
+      password += especiales.charAt(
+        Math.floor(Math.random() * especiales.length),
+      );
     }
 
     // Mezclar caracteres

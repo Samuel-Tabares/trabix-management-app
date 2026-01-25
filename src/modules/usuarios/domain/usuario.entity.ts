@@ -4,7 +4,7 @@ import { DomainException } from '../../../domain/exceptions/domain.exception';
 /**
  * Entidad de dominio Usuario
  * Según secciones 1.1, 1.2 del documento
- * 
+ *
  * Reglas de negocio:
  * - Admin crea vendedor con contraseña temporal
  * - Contraseña debe cambiarse antes de operar
@@ -84,16 +84,6 @@ export class UsuarioEntity {
   }
 
   /**
-   * Verifica si el usuario es reclutador (tiene reclutados)
-   * Según sección 1.1: RECLUTADOR es VENDEDOR que obtiene beneficios de reclutador
-   */
-  get esReclutador(): boolean {
-    // Esto se determina externamente verificando si tiene reclutados
-    // La entidad no tiene acceso a los reclutados directamente
-    return false;
-  }
-
-  /**
    * Valida si puede cambiar a un nuevo estado
    */
   validarCambioEstado(nuevoEstado: EstadoUsuario): void {
@@ -118,10 +108,7 @@ export class UsuarioEntity {
    */
   validarEliminacion(): void {
     if (this.eliminado) {
-      throw new DomainException(
-        'USR_001',
-        'El usuario ya está eliminado',
-      );
+      throw new DomainException('USR_001', 'El usuario ya está eliminado');
     }
 
     if (this.rol === 'ADMIN') {

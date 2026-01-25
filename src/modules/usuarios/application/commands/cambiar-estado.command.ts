@@ -2,8 +2,8 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Usuario, EstadoUsuario } from '@prisma/client';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UsuarioEntity } from '../../domain/usuario.entity';
@@ -22,14 +22,14 @@ export class CambiarEstadoCommand implements ICommand {
 /**
  * Handler del comando CambiarEstado
  * Según sección 1.2 del documento
- * 
+ *
  * Usuario ACTIVO:
  * - Puede crear lotes
  * - Puede registrar ventas
  * - Puede solicitar equipamiento
  * - Puede participar en cuadres
  * - Aparece en jerarquías
- * 
+ *
  * Usuario INACTIVO:
  * - No puede crear nuevos lotes
  * - No puede registrar ventas
@@ -56,11 +56,9 @@ export class CambiarEstadoHandler
     // Buscar usuario
     const usuario = await this.usuarioRepository.findById(usuarioId);
     if (!usuario) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     // Crear entidad de dominio para validaciones

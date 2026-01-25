@@ -2,8 +2,8 @@ import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Usuario } from '@prisma/client';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { UpdateUsuarioDto } from '../dto';
@@ -39,11 +39,9 @@ export class ActualizarUsuarioHandler
     // Buscar usuario
     const usuario = await this.usuarioRepository.findById(usuarioId);
     if (!usuario) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     if (usuario.eliminado) {

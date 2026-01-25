@@ -181,7 +181,7 @@ export class PrismaConfiguracionRepository implements IConfiguracionRepository {
         orderBy: { fechaCambio: 'desc' },
         include: {
           modificadoPor: {
-            select: { nombre: true, apellidos: true },
+            select: { id: true, nombre: true, apellidos: true },
           },
         },
       }),

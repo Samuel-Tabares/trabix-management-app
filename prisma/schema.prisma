@@ -119,6 +119,7 @@ enum EstadoPedidoStock {
   BORRADOR
   CONFIRMADO
   RECIBIDO
+  CANCELADO
 }
 
 // ===========================================
@@ -146,6 +147,7 @@ model Usuario {
   ventasMayor             VentaMayor[]
   equipamiento            Equipamiento?
   notificaciones          Notificacion[]
+  historialConfiguraciones HistorialConfiguracion[]
   
   refreshTokenHash        String?
   intentosFallidos        Int            @default(0)
@@ -425,6 +427,9 @@ model PedidoStock {
   detallesCosto      DetalleCostoPedido[]
   
   fechaCreacion      DateTime          @default(now())
+  fechaRecepcion     DateTime?
+  fechaCancelacion   DateTime?
+  motivoCancelacion  String?
   notas              String?
 
   @@index([estado])
@@ -482,6 +487,7 @@ model HistorialConfiguracion {
   valorAnterior   String
   valorNuevo      String
   modificadoPorId String
+  modificadoPor   Usuario  @relation(fields: [modificadoPorId], references: [id])
   motivo          String?
   
   fechaCambio     DateTime @default(now())
