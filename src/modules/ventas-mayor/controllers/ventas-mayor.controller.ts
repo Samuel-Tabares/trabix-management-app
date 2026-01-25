@@ -22,12 +22,14 @@ import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-us
 
 // DTOs
 import {
-    RegistrarVentaMayorDto,
     QueryVentasMayorDto,
+
+} from '../application/dto/query-ventas-mayor.dto';
+import{
     VentaMayorResponseDto,
     VentasMayorPaginadasDto,
     StockDisponibleResponseDto,
-} from '../application/dto';
+}from '../application/dto/venta-mayor-response.dto';
 
 // Commands
 import {
@@ -41,6 +43,7 @@ import {
     ListarVentasMayorQuery,
     CalcularStockDisponibleQuery,
 } from '../application/queries';
+import {RegistrarVentaMayorDto} from "../application/dto/registrar-venta-mayor.dto";
 
 /**
  * Controlador de Ventas al Mayor

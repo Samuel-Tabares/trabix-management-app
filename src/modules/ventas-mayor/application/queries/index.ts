@@ -12,11 +12,13 @@ import { ConsumidorStockMayorService } from '../../domain/consumidor-stock-mayor
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import {
     QueryVentasMayorDto,
+
+} from '../dto/query-ventas-mayor.dto';
+import{
     VentaMayorResponseDto,
     VentasMayorPaginadasDto,
     StockDisponibleResponseDto,
-} from '../dto';
-
+}from '../dto/venta-mayor-response.dto';
 // ========== ObtenerVentaMayorQuery ==========
 
 export class ObtenerVentaMayorQuery implements IQuery {

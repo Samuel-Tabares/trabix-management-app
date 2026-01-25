@@ -19,7 +19,7 @@ import {
     USUARIO_REPOSITORY,
 } from '../../../usuarios/domain/usuario.repository.interface';
 import { EvaluadorFinancieroMayorService } from '../../../cuadres-mayor/domain/evaluador-financiero-mayor.service';
-import { CalculadoraInversionService } from '../../../lotes-module-corregido/domain/calculadora-inversion.service';
+import { CalculadoraInversionService } from '../../../lotes/domain/calculadora-inversion.service';
 import { JerarquiaReclutador } from '../../../cuadres/domain/calculadora-ganancias.service';
 
 /**
