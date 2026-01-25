@@ -2,13 +2,10 @@ import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import {
-    IUsuarioRepository,
-    USUARIO_REPOSITORY,
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
-import {
-    UsuarioResponseDto,
-    UsuarioBasicoDto,
-} from '../dto';
+import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 /**
@@ -36,11 +33,9 @@ export class ObtenerPerfilHandler
 
     const usuario = await this.usuarioRepository.findById(usuarioId);
     if (!usuario) {
-      throw new DomainException(
-        'USR_001',
-        'Usuario no encontrado',
-        { usuarioId },
-      );
+      throw new DomainException('USR_001', 'Usuario no encontrado', {
+        usuarioId,
+      });
     }
 
     // Obtener reclutador

@@ -1,17 +1,17 @@
 import {
-    Controller,
-    Get,
-    Post,
-    Patch,
-    Delete,
-    Body,
-    Param,
-    Query,
-    HttpCode,
-    HttpStatus,
-    ParseUUIDPipe,
-    UseGuards,
-    UnauthorizedException,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+  ParseUUIDPipe,
+  UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,50 +23,58 @@ import {
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { AuthGuard } from '@nestjs/passport';
 
-// DTOs
+// Auth
 import { CurrentUser, AuthenticatedUser, Roles } from '../../auth/decorators';
 import { RolesGuard } from '../../auth/guards/roles.guard';
+
+// DTOs
 import {
-    CreateUsuarioDto,
-    UpdateUsuarioDto,
-    CambiarEstadoDto,
-    QueryUsuariosDto,
-    UsuarioResponseDto,
-    UsuariosPaginadosDto,
-    UsuarioJerarquiaDto,
+  CreateUsuarioDto,
+  UpdateUsuarioDto,
+  CambiarEstadoDto,
+  QueryUsuariosDto,
+  UsuarioResponseDto,
+  UsuariosPaginadosDto,
+  UsuarioJerarquiaDto,
 } from '../application/dto';
+
+// Commands
 import {
-    CrearUsuarioCommand,
-    ActualizarUsuarioCommand,
-    CambiarEstadoCommand,
-    EliminarUsuarioCommand,
+  CrearUsuarioCommand,
+  ActualizarUsuarioCommand,
+  CambiarEstadoCommand,
+  EliminarUsuarioCommand,
+  RestaurarUsuarioCommand,
 } from '../application/commands';
+
+// Queries
 import {
-    ObtenerUsuarioQuery,
-    ListarUsuariosQuery,
-    ObtenerJerarquiaQuery,
-    ObtenerPerfilQuery,
+  ObtenerUsuarioQuery,
+  ListarUsuariosQuery,
+  ObtenerJerarquiaQuery,
+  ObtenerPerfilQuery,
 } from '../application/queries';
-
-
 
 /**
  * Controlador de Usuarios
  * Según sección 20.3 del documento
- * 
+ *
  * Endpoints:
- * - POST /        - Crear vendedor (admin)
- * - GET /         - Listar vendedores
- * - GET /me       - Obtener perfil propio
- * - GET /:id      - Obtener vendedor
- * - PATCH /:id    - Actualizar vendedor
- * - PATCH /:id/estado - Cambiar estado
- * - DELETE /:id   - Eliminar vendedor
- * - GET /:id/jerarquia - Obtener árbol de jerarquía
+ * - POST /              - Crear vendedor (admin)
+ * - GET /               - Listar vendedores
+ * - GET /eliminados     - Listar usuarios eliminados (admin)
+ * - GET /me             - Obtener perfil propio
+ * - GET /:id            - Obtener vendedor
+ * - PATCH /:id          - Actualizar vendedor
+ * - PATCH /:id/estado   - Cambiar estado
+ * - DELETE /:id         - Eliminar vendedor (soft delete)
+ * - POST /:id/restaurar - Restaurar usuario eliminado
+ * - GET /:id/jerarquia  - Obtener árbol de jerarquía
  */
 @ApiTags('Usuarios')
 @ApiBearerAuth('access-token')
 @Controller('usuarios')
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UsuariosController {
   constructor(
     private readonly commandBus: CommandBus,
@@ -78,10 +86,15 @@ export class UsuariosController {
    * Crea un nuevo vendedor (solo admin)
    */
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear vendedor (admin)' })
+  @ApiOperation({
+    summary: 'Crear vendedor (admin)',
+    description:
+      'Crea un nuevo vendedor con contraseña temporal. ' +
+      'Si se especifica reclutadorId y el reclutador es VENDEDOR, ' +
+      'se promueve automáticamente a RECLUTADOR.',
+  })
   @ApiResponse({
     status: 201,
     description: 'Vendedor creado exitosamente',
@@ -89,12 +102,19 @@ export class UsuariosController {
       type: 'object',
       properties: {
         usuario: { $ref: '#/components/schemas/UsuarioResponseDto' },
-        passwordTemporal: { type: 'string', description: 'Contraseña temporal generada' },
+        passwordTemporal: {
+          type: 'string',
+          description: 'Contraseña temporal generada',
+        },
+        message: { type: 'string' },
       },
     },
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'Usuario ya existe (cédula, email o teléfono duplicado)' })
+  @ApiResponse({
+    status: 409,
+    description: 'Usuario ya existe (cédula, email o teléfono duplicado)',
+  })
   async crear(
     @Body() createDto: CreateUsuarioDto,
     @CurrentUser() admin: AuthenticatedUser,
@@ -108,7 +128,8 @@ export class UsuariosController {
     return {
       usuario: this.mapToResponse(result.usuario),
       passwordTemporal: result.passwordTemporal,
-      message: 'Vendedor creado exitosamente. Comparta la contraseña temporal con el vendedor.',
+      message:
+        'Vendedor creado exitosamente. Comparta la contraseña temporal con el vendedor.',
     };
   }
 
@@ -117,9 +138,8 @@ export class UsuariosController {
    * Lista vendedores con filtros y paginación
    */
   @Get()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Listar vendedores' })
+  @ApiOperation({ summary: 'Listar vendedores activos' })
   @ApiResponse({
     status: 200,
     description: 'Lista de vendedores',
@@ -128,6 +148,32 @@ export class UsuariosController {
   async listar(
     @Query() queryDto: QueryUsuariosDto,
   ): Promise<UsuariosPaginadosDto> {
+    // Asegurar que no muestre eliminados por defecto
+    queryDto.eliminado = false;
+    return this.queryBus.execute(new ListarUsuariosQuery(queryDto));
+  }
+
+  /**
+   * GET /usuarios/eliminados
+   * Lista usuarios eliminados (sección de eliminados)
+   * Según sección 1.2: "registro pasa a sección de eliminados"
+   */
+  @Get('eliminados')
+  @Roles('ADMIN')
+  @ApiOperation({
+    summary: 'Listar usuarios eliminados',
+    description: 'Lista usuarios que han sido eliminados (soft delete)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuarios eliminados',
+    type: UsuariosPaginadosDto,
+  })
+  async listarEliminados(
+    @Query() queryDto: QueryUsuariosDto,
+  ): Promise<UsuariosPaginadosDto> {
+    // Forzar filtro de eliminados
+    queryDto.eliminado = true;
     return this.queryBus.execute(new ListarUsuariosQuery(queryDto));
   }
 
@@ -136,7 +182,6 @@ export class UsuariosController {
    * Obtiene el perfil del usuario autenticado
    */
   @Get('me')
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener perfil propio' })
   @ApiResponse({
     status: 200,
@@ -156,7 +201,6 @@ export class UsuariosController {
    * Obtiene un vendedor por ID
    */
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Obtener vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
@@ -177,7 +221,6 @@ export class UsuariosController {
    * Actualiza los datos de un vendedor
    */
   @Patch(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'Actualizar vendedor' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
@@ -204,11 +247,16 @@ export class UsuariosController {
   /**
    * PATCH /usuarios/:id/estado
    * Cambia el estado de un vendedor (ACTIVO/INACTIVO)
+   * Según sección 1.2 del documento
    */
   @Patch(':id/estado')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  @ApiOperation({ summary: 'Cambiar estado de vendedor' })
+  @ApiOperation({
+    summary: 'Cambiar estado de vendedor',
+    description:
+      'Usuario ACTIVO puede operar. Usuario INACTIVO no puede crear lotes, ' +
+      'registrar ventas ni solicitar equipamiento.',
+  })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiResponse({
     status: 200,
@@ -232,12 +280,17 @@ export class UsuariosController {
   /**
    * DELETE /usuarios/:id
    * Elimina un vendedor (soft delete)
+   * Según sección 1.2: "registro pasa a sección de eliminados"
    */
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Eliminar vendedor' })
+  @ApiOperation({
+    summary: 'Eliminar vendedor',
+    description:
+      'Elimina un vendedor (soft delete). El registro pasa a la sección de eliminados. ' +
+      'También elimina jerarquías inferiores asociadas.',
+  })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiResponse({
     status: 200,
@@ -261,11 +314,42 @@ export class UsuariosController {
   }
 
   /**
+   * POST /usuarios/:id/restaurar
+   * Restaura un usuario eliminado
+   * El usuario se restaura en estado INACTIVO, el admin decide si activarlo
+   */
+  @Post(':id/restaurar')
+  @Roles('ADMIN')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Restaurar usuario eliminado',
+    description:
+      'Restaura un usuario de la sección de eliminados. ' +
+      'El usuario se restaura en estado INACTIVO.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del usuario eliminado' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario restaurado',
+    type: UsuarioResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  @ApiResponse({ status: 409, description: 'El usuario no está eliminado' })
+  async restaurar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
+  ): Promise<UsuarioResponseDto> {
+    if (!admin) throw new UnauthorizedException();
+
+    await this.commandBus.execute(new RestaurarUsuarioCommand(id, admin.id));
+    return this.queryBus.execute(new ObtenerUsuarioQuery(id));
+  }
+
+  /**
    * GET /usuarios/:id/jerarquia
    * Obtiene el árbol de jerarquía de un usuario
    */
   @Get(':id/jerarquia')
-  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Obtener árbol de jerarquía' })
   @ApiParam({ name: 'id', description: 'ID del vendedor' })
   @ApiResponse({
@@ -285,9 +369,11 @@ export class UsuariosController {
     // RECLUTADOR: puede ver su rama (JERARQUIA_READ_BRANCH)
     // VENDEDOR: solo puede ver su propia jerarquía (JERARQUIA_READ_OWN)
     if (user.rol !== 'ADMIN' && user.id !== id) {
-      // Para reclutadores, verificar si el usuario está en su rama
-      // Por ahora, simplificamos y solo permitimos ver la propia jerarquía
-      // La lógica completa de rama se implementará cuando sea necesario
+      // TODO: Implementar verificación de rama para reclutadores
+      // Por ahora, solo ADMIN o el propio usuario pueden ver
+      throw new UnauthorizedException(
+        'No tiene permisos para ver esta jerarquía',
+      );
     }
 
     return this.queryBus.execute(new ObtenerJerarquiaQuery(id));
