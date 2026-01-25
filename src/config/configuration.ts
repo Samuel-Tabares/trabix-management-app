@@ -4,7 +4,7 @@ import redisConfig from './redis.config';
 import jwtConfig from './jwt.config';
 import throttleConfig from './throttle.config';
 
-export default () => ({
+const configuration = () => ({
     app: {
         nodeEnv: process.env.NODE_ENV,
         port: Number(process.env.PORT),
@@ -79,3 +79,4 @@ export default () => ({
         maxRetries: Number(process.env.OUTBOX_MAX_RETRIES),
     },
 });
+export default configuration;

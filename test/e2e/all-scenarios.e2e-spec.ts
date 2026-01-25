@@ -25,7 +25,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
-import { PrismaService } from '../../src/infrastructure';
+import { PrismaService } from '../../src/infrastructure/database/prisma/prisma.service';
 
 describe('TRABIX - Pruebas E2E Completas', () => {
     let app: INestApplication;

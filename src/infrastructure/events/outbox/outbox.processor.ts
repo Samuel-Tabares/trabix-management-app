@@ -146,11 +146,4 @@ export class OutboxProcessor implements OnModuleInit {
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
-
-  /**
-   * Fuerza el procesamiento del outbox (para testing)
-   */
-  async forceProcess(): Promise<void> {
-    await this.processOutbox();
-  }
 }

@@ -76,7 +76,6 @@ export class HealthController {
         }),
     ]);
   }
-
   /**
    * GET /health/ready
    * Readiness probe - indica si la aplicación puede recibir tráfico
@@ -88,11 +87,24 @@ export class HealthController {
   @ApiResponse({ status: 200, description: 'Aplicación lista para recibir tráfico' })
   @ApiResponse({ status: 503, description: 'Aplicación no lista' })
   async readiness(): Promise<HealthCheckResult> {
-    // Verificamos conexiones críticas
-    return this.health.check([
-      () => this.prismaHealth.pingCheck('database', this.prisma),
-      () => this.redisHealth.isHealthy('redis'),
-    ]);
+      return this.health.check([
+          // Dependencia crítica → si falla, NO recibimos tráfico
+          () => this.prismaHealth.pingCheck('database', this.prisma),
+
+          // Dependencia best-effort → nunca rompe readiness
+          async () => {
+          try {
+              return await this.redisHealth.isHealthy('redis');
+          } catch {
+              return {
+                  redis: {
+                      status: 'up',
+                      info: { degraded: true },
+                  },
+              };
+            }
+          },
+      ]);
   }
 
   /**

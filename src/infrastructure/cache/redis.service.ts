@@ -44,16 +44,8 @@ export class RedisService implements OnModuleDestroy {
   getClient(): Redis {
     return this.client;
   }
-
-  /**
-   * Obtiene un valor del cache
-   */
-  async get(key: string): Promise<string | null> {
-    return this.client.get(key);
-  }
-
-  /**
-   * Obtiene un valor JSON del cache
+    /**
+     * Obtiene un valor JSON del cache
    */
   async getJson<T>(key: string): Promise<T | null> {
     const value = await this.client.get(key);
@@ -93,61 +85,15 @@ export class RedisService implements OnModuleDestroy {
   async del(key: string): Promise<void> {
     await this.client.del(key);
   }
-
-  /**
-   * Elimina múltiples claves del cache
-   */
-  async delMany(keys: string[]): Promise<void> {
-    if (keys.length > 0) {
-      await this.client.del(...keys);
-    }
-  }
-
-  /**
-   * Verifica si una clave existe
+    /**
+     * Verifica si una clave existe
    */
   async exists(key: string): Promise<boolean> {
     const result = await this.client.exists(key);
     return result === 1;
   }
-
-  /**
-   * Establece expiración para una clave
-   */
-  async expire(key: string, seconds: number): Promise<void> {
-    await this.client.expire(key, seconds);
-  }
-
-  /**
-   * Obtiene el tiempo de vida restante de una clave
-   */
-  async ttl(key: string): Promise<number> {
-    return this.client.ttl(key);
-  }
-
-  /**
-   * Incrementa un contador
-   */
-  async incr(key: string): Promise<number> {
-    return this.client.incr(key);
-  }
-
-  /**
-   * Decrementa un contador
-   */
-  async decr(key: string): Promise<number> {
-    return this.client.decr(key);
-  }
-
-  /**
-   * Obtiene todas las claves que coinciden con un patrón
-   */
-  async keys(pattern: string): Promise<string[]> {
-    return this.client.keys(pattern);
-  }
-
-  /**
-   * Verifica la conexión a Redis
+    /**
+     * Verifica la conexión a Redis
    */
   async ping(): Promise<boolean> {
     try {

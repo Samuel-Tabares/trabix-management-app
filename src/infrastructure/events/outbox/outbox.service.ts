@@ -1,15 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
-
-/**
- * Interfaz para mensajes del Outbox
- */
-export interface OutboxMessage {
-  eventType: string;
-  payload: Record<string, any>;
-}
-
 /**
  * Outbox Service
  * Según sección 23 del documento: Outbox Pattern para eventos confiables
@@ -31,45 +21,8 @@ export class OutboxService {
   private readonly MAX_RETRIES = 3;
 
   constructor(private readonly prisma: PrismaService) {}
-
-  /**
-   * Guarda un mensaje en el outbox
-   * Debe llamarse dentro de una transacción Prisma
-   */
-  async save(message: OutboxMessage, tx?: Prisma.TransactionClient): Promise<void> {
-    const client = tx || this.prisma;
-
-    await client.outbox.create({
-      data: {
-        eventType: message.eventType,
-        payload: message.payload,
-      },
-    });
-
-    this.logger.debug(`Mensaje agregado al outbox: ${message.eventType}`);
-  }
-
-  /**
-   * Guarda múltiples mensajes en el outbox
-   */
-  async saveMany(
-    messages: OutboxMessage[],
-    tx?: Prisma.TransactionClient,
-  ): Promise<void> {
-    const client = tx || this.prisma;
-
-    await client.outbox.createMany({
-      data: messages.map((m) => ({
-        eventType: m.eventType,
-        payload: m.payload,
-      })),
-    });
-
-    this.logger.debug(`${messages.length} mensajes agregados al outbox`);
-  }
-
-  /**
-   * Obtiene mensajes pendientes de procesar
+    /**
+     * Obtiene mensajes pendientes de procesar
    */
   async getPendingMessages(limit: number = 100): Promise<any[]> {
     return this.prisma.outbox.findMany({
@@ -127,28 +80,5 @@ export class OutboxService {
     }
 
     return result.count;
-  }
-
-  /**
-   * Obtiene estadísticas del outbox
-   */
-  async getStats(): Promise<{
-    pending: number;
-    processed: number;
-    failed: number;
-  }> {
-    const [pending, processed, failed] = await Promise.all([
-      this.prisma.outbox.count({
-        where: { processedAt: null, retries: { lt: this.MAX_RETRIES } },
-      }),
-      this.prisma.outbox.count({
-        where: { processedAt: { not: null } },
-      }),
-      this.prisma.outbox.count({
-        where: { processedAt: null, retries: { gte: this.MAX_RETRIES } },
-      }),
-    ]);
-
-    return { pending, processed, failed };
   }
 }

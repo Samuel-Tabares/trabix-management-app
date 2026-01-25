@@ -5,8 +5,7 @@ import {
   CallHandler,
   ConflictException,
 } from '@nestjs/common';
-import { Observable, of } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import {catchError, from, mergeMap, Observable, of} from 'rxjs';
 import { Reflector } from '@nestjs/core';
 import { RedisService } from '../../../infrastructure/cache/redis.service';
 
@@ -87,21 +86,28 @@ export class IdempotencyInterceptor implements NestInterceptor {
     }
 
     // Procesar la solicitud y cachear la respuesta
-    return next.handle().pipe(
-      tap({
-        next: async (data) => {
-          const responseToCache: CachedResponse = {
-            statusCode: response.statusCode,
-            body: data,
-          };
-          await this.redis.setJson(cacheKey, responseToCache, this.TTL_SECONDS);
-          await this.releaseLock(lockKey);
-        },
-        error: async () => {
-          await this.releaseLock(lockKey);
-        },
-      }),
-    );
+      return next.handle().pipe(
+          mergeMap((data) =>
+              from(
+                  (async () => {
+                      const responseToCache: CachedResponse = {
+                          statusCode: response.statusCode,
+                          body: data,
+                      };
+
+                      await this.redis.setJson(cacheKey, responseToCache, this.TTL_SECONDS);
+                      await this.releaseLock(lockKey);
+
+                      return data;
+                  })(),
+              ),
+          ),
+          catchError(async (err) => {
+              await this.releaseLock(lockKey);
+              throw err;
+          }),
+      );
+
   }
 
   private getCacheKey(idempotencyKey: string, endpoint: string): string {

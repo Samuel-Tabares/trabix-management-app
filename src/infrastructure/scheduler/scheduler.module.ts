@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import {
-  TandaAutoTransitJob,
+
   CleanupExpiredTokensJob,
   CleanupProcessedOutboxJob,
   CleanupExpiredIdempotencyKeysJob,
-} from './jobs';
+} from './jobs/cleanup.jobs';
+import{
+    TandaAutoTransitJob,
+} from './jobs/tanda-auto-transit.job'
 import { EventsModule } from '../events/events.module';
 
 /**

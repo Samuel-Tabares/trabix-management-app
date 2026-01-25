@@ -31,9 +31,7 @@ export const winstonConfig = {
     }),
   ],
 };
-
-export const WinstonLoggerModule = WinstonModule.forRoot(winstonConfig);
-
+WinstonModule.forRoot(winstonConfig);
 // Factory para crear el logger en bootstrap
 export const createWinstonLogger = () => {
   return WinstonModule.createLogger(winstonConfig);
