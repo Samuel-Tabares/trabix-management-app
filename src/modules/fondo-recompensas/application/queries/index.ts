@@ -12,6 +12,10 @@ import {
 
 // ========== ObtenerSaldoFondoQuery ==========
 
+/**
+ * Query para obtener el saldo actual del fondo
+ * Disponible para todos los usuarios autenticados
+ */
 export class ObtenerSaldoFondoQuery implements IQuery {}
 
 @QueryHandler(ObtenerSaldoFondoQuery)
@@ -31,6 +35,10 @@ export class ObtenerSaldoFondoHandler
 
 // ========== ListarTransaccionesFondoQuery ==========
 
+/**
+ * Query para listar transacciones del fondo
+ * Disponible para todos los usuarios autenticados
+ */
 export class ListarTransaccionesFondoQuery implements IQuery {
   constructor(public readonly filtros: QueryTransaccionesDto) {}
 }
@@ -58,6 +66,7 @@ export class ListarTransaccionesFondoHandler
         monto: Number.parseFloat(m.monto.toFixed(2)),
         concepto: m.concepto,
         loteId: m.loteId,
+        vendedorBeneficiarioId: m.vendedorBeneficiarioId,
         fechaTransaccion: m.fechaTransaccion,
       })),
       total: resultado.total,

@@ -5,10 +5,12 @@ import { DomainException } from '../../../domain/exceptions/domain.exception';
 /**
  * Configuración del fondo de recompensas
  * Según sección 12 del documento
+ * 
+ * NOTA: El aporte por TRABIX se lee desde ConfigService en CalculadoraInversionService
  */
 export const FONDO_CONFIG = {
-  // Monto por TRABIX al activar lote: $200 (configurable)
-  APORTE_POR_TRABIX: new Decimal(200),
+  // Valor por defecto si no está configurado
+  APORTE_POR_TRABIX_DEFAULT: new Decimal(200),
 };
 
 /**
@@ -25,6 +27,7 @@ export interface MovimientoFondo {
   monto: Decimal;
   concepto: string;
   loteId?: string;
+  vendedorBeneficiarioId?: string; // Solo para salidas (premios)
   fechaTransaccion: Date;
 }
 
@@ -34,16 +37,19 @@ export interface MovimientoFondo {
  * 
  * Es un fondo global administrado por Admin para premiar vendedores destacados.
  * - Se alimenta automáticamente al activar lotes ($200 por TRABIX)
- * - Admin registra retiros manualmente
+ * - Admin registra retiros manualmente indicando el beneficiario
  * - El fondo no puede quedar en negativo
+ * - Todos pueden ver el saldo y transacciones
  */
 @Injectable()
 export class FondoRecompensasService {
   /**
    * Calcula el aporte al fondo por un lote
+   * NOTA: Este métoddo usa valor por defecto. El valor real
+   * se calcula en CalculadoraInversionService usando ConfigService.
    */
   calcularAporteLote(cantidadTrabix: number): Decimal {
-    return FONDO_CONFIG.APORTE_POR_TRABIX.times(cantidadTrabix);
+    return FONDO_CONFIG.APORTE_POR_TRABIX_DEFAULT.times(cantidadTrabix);
   }
 
   /**
@@ -64,6 +70,7 @@ export class FondoRecompensasService {
         {
           saldoActual: saldoActual.toFixed(2),
           montoSalida: montoSalida.toFixed(2),
+          disponible: saldoActual.toFixed(2),
         },
       );
     }
@@ -77,6 +84,7 @@ export interface CreateMovimientoData {
   monto: Decimal;
   concepto: string;
   loteId?: string;
+  vendedorBeneficiarioId?: string; // Solo para salidas
 }
 
 export interface IFondoRecompensasRepository {

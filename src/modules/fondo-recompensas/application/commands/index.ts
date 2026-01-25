@@ -1,14 +1,24 @@
-import { CommandHandler, ICommandHandler, ICommand } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler, ICommand, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {
   IFondoRecompensasRepository,
   FONDO_RECOMPENSAS_REPOSITORY,
   FondoRecompensasService,
+  MovimientoFondo,
 } from '../../domain';
+import {
+  IUsuarioRepository,
+  USUARIO_REPOSITORY,
+} from '../../../usuarios/domain/usuario.repository.interface';
+import { DomainException } from '../../../../domain/exceptions/domain.exception';
+import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 // ========== RegistrarEntradaFondoCommand ==========
 
+/**
+ * Command para registrar una entrada al fondo (automático al activar lote)
+ */
 export class RegistrarEntradaFondoCommand implements ICommand {
   constructor(
     public readonly monto: Decimal,
@@ -19,7 +29,7 @@ export class RegistrarEntradaFondoCommand implements ICommand {
 
 @CommandHandler(RegistrarEntradaFondoCommand)
 export class RegistrarEntradaFondoHandler
-  implements ICommandHandler<RegistrarEntradaFondoCommand>
+  implements ICommandHandler<RegistrarEntradaFondoCommand, MovimientoFondo>
 {
   private readonly logger = new Logger(RegistrarEntradaFondoHandler.name);
 
@@ -28,7 +38,7 @@ export class RegistrarEntradaFondoHandler
     private readonly fondoRepository: IFondoRecompensasRepository,
   ) {}
 
-  async execute(command: RegistrarEntradaFondoCommand): Promise<any> {
+  async execute(command: RegistrarEntradaFondoCommand): Promise<MovimientoFondo> {
     const movimiento = await this.fondoRepository.registrarEntrada({
       tipo: 'ENTRADA',
       monto: command.monto,
@@ -46,43 +56,107 @@ export class RegistrarEntradaFondoHandler
 
 // ========== RegistrarSalidaFondoCommand ==========
 
+/**
+ * Command para registrar una salida del fondo (premio/bono a vendedor)
+ * 
+ * Validaciones:
+ * 1. El vendedor beneficiario existe y está activo
+ * 2. El monto es mayor a 0
+ * 3. El fondo tiene saldo suficiente
+ * 
+ * Acciones:
+ * 1. Registrar el movimiento de salida
+ * 2. Notificar al vendedor beneficiario
+ */
 export class RegistrarSalidaFondoCommand implements ICommand {
   constructor(
     public readonly monto: Decimal,
     public readonly concepto: string,
+    public readonly vendedorBeneficiarioId: string,
     public readonly adminId: string,
   ) {}
 }
 
 @CommandHandler(RegistrarSalidaFondoCommand)
 export class RegistrarSalidaFondoHandler
-  implements ICommandHandler<RegistrarSalidaFondoCommand>
+  implements ICommandHandler<RegistrarSalidaFondoCommand, MovimientoFondo>
 {
   private readonly logger = new Logger(RegistrarSalidaFondoHandler.name);
 
   constructor(
     @Inject(FONDO_RECOMPENSAS_REPOSITORY)
     private readonly fondoRepository: IFondoRecompensasRepository,
+    @Inject(USUARIO_REPOSITORY)
+    private readonly usuarioRepository: IUsuarioRepository,
     private readonly fondoService: FondoRecompensasService,
+    private readonly commandBus: CommandBus,
   ) {}
 
-  async execute(command: RegistrarSalidaFondoCommand): Promise<any> {
-    // Obtener saldo actual
+  async execute(command: RegistrarSalidaFondoCommand): Promise<MovimientoFondo> {
+    const { monto, concepto, vendedorBeneficiarioId, adminId } = command;
+
+    // 1. Validar que el vendedor beneficiario existe
+    const vendedor = await this.usuarioRepository.findById(vendedorBeneficiarioId);
+    if (!vendedor) {
+      throw new DomainException(
+        'FND_003',
+        'Vendedor beneficiario no encontrado',
+        { vendedorBeneficiarioId },
+      );
+    }
+
+    if (vendedor.eliminado) {
+      throw new DomainException(
+        'FND_003',
+        'Vendedor beneficiario no encontrado',
+        { vendedorBeneficiarioId },
+      );
+    }
+
+    if (vendedor.estado !== 'ACTIVO') {
+      throw new DomainException(
+        'FND_004',
+        'El vendedor beneficiario debe estar activo',
+        { estadoVendedor: vendedor.estado },
+      );
+    }
+
+    // 2. Obtener saldo actual y validar
     const saldoActual = await this.fondoRepository.obtenerSaldo();
+    this.fondoService.validarSalida(saldoActual, monto);
 
-    // Validar que no quede en negativo
-    this.fondoService.validarSalida(saldoActual, command.monto);
-
-    // Registrar salida
+    // 3. Registrar salida con el beneficiario
     const movimiento = await this.fondoRepository.registrarSalida({
       tipo: 'SALIDA',
-      monto: command.monto,
-      concepto: command.concepto,
+      monto: monto,
+      concepto: concepto,
+      vendedorBeneficiarioId: vendedorBeneficiarioId,
     });
 
     this.logger.log(
-      `Salida registrada: $${command.monto.toFixed(2)} - ${command.concepto}`,
+      `Salida registrada: $${monto.toFixed(2)} - ${concepto} - Beneficiario: ${vendedorBeneficiarioId} - Admin: ${adminId}`,
     );
+
+    // 4. Notificar al vendedor beneficiario
+    try {
+      await this.commandBus.execute(
+        new EnviarNotificacionCommand(
+          vendedorBeneficiarioId,
+          'PREMIO_RECIBIDO',
+          {
+            monto: monto.toNumber(),
+            concepto: concepto,
+            fecha: movimiento.fechaTransaccion,
+          },
+        ),
+      );
+      this.logger.log(`Notificación enviada al beneficiario: ${vendedorBeneficiarioId}`);
+    } catch (error) {
+      // No fallar si la notificación falla
+      this.logger.warn(
+        `Error enviando notificación al beneficiario ${vendedorBeneficiarioId}: ${error}`,
+      );
+    }
 
     return movimiento;
   }

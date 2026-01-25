@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-    IFondoRecompensasRepository,
-    CreateMovimientoData,
-    MovimientoFondo,
-    TipoMovimientoFondo,
+  IFondoRecompensasRepository,
+  CreateMovimientoData,
+  MovimientoFondo,
+  TipoMovimientoFondo,
 } from '../domain';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class PrismaFondoRecompensasRepository implements IFondoRecompensasReposi
 
   async obtenerSaldo(): Promise<Decimal> {
     // Calcular saldo sumando entradas y restando salidas
-    const result = await this.prisma.movimientoFondo.aggregate({
+    const resultEntradas = await this.prisma.movimientoFondo.aggregate({
       _sum: {
         monto: true,
       },
@@ -32,7 +32,7 @@ export class PrismaFondoRecompensasRepository implements IFondoRecompensasReposi
       },
     });
 
-    const entradas = new Decimal(result._sum.monto || 0);
+    const entradas = new Decimal(resultEntradas._sum.monto || 0);
     const salidas = new Decimal(resultSalidas._sum.monto || 0);
 
     return entradas.minus(salidas);
@@ -71,6 +71,7 @@ export class PrismaFondoRecompensasRepository implements IFondoRecompensasReposi
         monto: new Decimal(m.monto),
         concepto: m.concepto,
         loteId: m.loteId || undefined,
+        vendedorBeneficiarioId: m.vendedorBeneficiarioId || undefined,
         fechaTransaccion: m.fechaTransaccion,
       })),
       total,
@@ -104,6 +105,7 @@ export class PrismaFondoRecompensasRepository implements IFondoRecompensasReposi
         tipo: 'SALIDA',
         monto: data.monto.toFixed(2),
         concepto: data.concepto,
+        vendedorBeneficiarioId: data.vendedorBeneficiarioId,
       },
     });
 
@@ -112,6 +114,7 @@ export class PrismaFondoRecompensasRepository implements IFondoRecompensasReposi
       tipo: 'SALIDA',
       monto: new Decimal(movimiento.monto),
       concepto: movimiento.concepto,
+      vendedorBeneficiarioId: movimiento.vendedorBeneficiarioId || undefined,
       fechaTransaccion: movimiento.fechaTransaccion,
     };
   }

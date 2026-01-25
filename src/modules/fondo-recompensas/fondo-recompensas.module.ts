@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
@@ -18,18 +18,34 @@ import { FondoRecompensasCommandHandlers } from './application/commands';
 import { FondoRecompensasQueryHandlers } from './application/queries';
 import { FondoRecompensasEventHandlers } from './application/events';
 
+// Usuarios Module (para validar vendedor beneficiario)
+import { UsuariosModule } from '../usuarios/usuarios.module';
+
+// Notificaciones Module (para notificar al beneficiario)
+import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+
 /**
  * Módulo del Fondo de Recompensas
  * Según sección 12 del documento
  * 
  * Gestiona:
- * - Consulta de saldo del fondo
- * - Listado de transacciones (entradas y salidas)
- * - Registro de salidas (admin)
- * - Las entradas se registran automáticamente al activar lotes
+ * - Consulta de saldo del fondo (todos los usuarios)
+ * - Listado de transacciones (todos los usuarios)
+ * - Registro de salidas/premios (solo admin)
+ * 
+ * Las entradas se registran automáticamente al activar lotes
+ * desde el LoteActivadoEvent en el módulo de lotes.
+ * 
+ * Cálculo:
+ * - Aporte por TRABIX = $200 (configurable)
+ * - Al activar lote: entrada = cantidadTrabix × $200
  */
 @Module({
-  imports: [CqrsModule],
+  imports: [
+    CqrsModule,
+    forwardRef(() => UsuariosModule),
+    forwardRef(() => NotificacionesModule),
+  ],
   controllers: [FondoRecompensasController],
   providers: [
     // Repository
@@ -37,15 +53,23 @@ import { FondoRecompensasEventHandlers } from './application/events';
       provide: FONDO_RECOMPENSAS_REPOSITORY,
       useClass: PrismaFondoRecompensasRepository,
     },
+    PrismaFondoRecompensasRepository,
+    
     // Domain Services
     FondoRecompensasService,
+    
     // Command Handlers
     ...FondoRecompensasCommandHandlers,
+    
     // Query Handlers
     ...FondoRecompensasQueryHandlers,
+    
     // Event Handlers
     ...FondoRecompensasEventHandlers,
   ],
-  exports: [FONDO_RECOMPENSAS_REPOSITORY, FondoRecompensasService],
+  exports: [
+    FONDO_RECOMPENSAS_REPOSITORY,
+    FondoRecompensasService,
+  ],
 })
 export class FondoRecompensasModule {}
