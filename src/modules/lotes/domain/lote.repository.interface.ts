@@ -36,6 +36,11 @@ export interface ILoteRepository {
   activar(id: string): Promise<LoteConTandas>;
 
   /**
+   * Cancela un lote en estado CREADO (elimina el lote y sus tandas)
+   */
+  cancelar(id: string): Promise<void>;
+
+  /**
    * Finaliza un lote (ACTIVO → FINALIZADO)
    */
   finalizar(id: string): Promise<LoteConTandas>;

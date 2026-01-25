@@ -3,12 +3,11 @@ import {
   IsUUID,
   IsInt,
   Min,
-  Max,
   IsNotEmpty,
 } from 'class-validator';
 
 /**
- * DTO para crear un nuevo lote
+ * DTO para crear un nuevo lote (Admin)
  * Según sección 3 del documento
  */
 export class CreateLoteDto {
@@ -24,10 +23,8 @@ export class CreateLoteDto {
     description: 'Cantidad de TRABIX del lote',
     example: 100,
     minimum: 1,
-    maximum: 1000,
   })
   @IsInt({ message: 'La cantidad debe ser un número entero' })
   @Min(1, { message: 'La cantidad mínima es 1 TRABIX' })
-  @Max(1000, { message: 'La cantidad máxima es 1000 TRABIX' })
   cantidadTrabix!: number;
 }

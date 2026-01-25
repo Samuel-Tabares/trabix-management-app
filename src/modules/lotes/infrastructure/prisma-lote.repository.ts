@@ -3,12 +3,12 @@ import { Lote, Prisma } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
-    ILoteRepository,
-    LoteConTandas,
-    FindLotesOptions,
-    PaginatedLotes,
-    CreateLoteData,
-    CountLotesOptions,
+  ILoteRepository,
+  LoteConTandas,
+  FindLotesOptions,
+  PaginatedLotes,
+  CreateLoteData,
+  CountLotesOptions,
 } from '../domain/lote.repository.interface';
 
 /**
@@ -184,6 +184,24 @@ export class PrismaLoteRepository implements ILoteRepository {
           },
         },
       }) as Promise<LoteConTandas>;
+    });
+  }
+
+  /**
+   * Cancela un lote en estado CREADO
+   * Elimina el lote y todas sus tandas (hard delete)
+   */
+  async cancelar(id: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Primero eliminar las tandas asociadas
+      await tx.tanda.deleteMany({
+        where: { loteId: id },
+      });
+
+      // Luego eliminar el lote
+      await tx.lote.delete({
+        where: { id },
+      });
     });
   }
 

@@ -11,7 +11,7 @@ import {
 import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '../../domain/lote.repository.interface';
+} from '../../../lotes/domain/lote.repository.interface';
 import {
     IMiniCuadreRepository,
     MINI_CUADRE_REPOSITORY,

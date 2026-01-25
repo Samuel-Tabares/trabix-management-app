@@ -4,10 +4,10 @@ import { Decimal } from 'decimal.js';
 import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '../../domain/lote.repository.interface';
+} from '../../../lotes/domain/lote.repository.interface';
 import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
-import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { ResumenFinancieroDto } from '../dto';
+import { DomainException } from '@domain/exceptions/domain.exception';
+import { ResumenFinancieroDto } from '../../../lotes/application/dto';
 
 /**
  * Query para obtener el resumen financiero de un lote

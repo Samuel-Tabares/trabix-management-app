@@ -15,7 +15,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes/domain/tanda.repository.interface';
+} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CuadreMayorExitosoEvent } from '../events/cuadre-mayor-exitoso.event';
 import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';

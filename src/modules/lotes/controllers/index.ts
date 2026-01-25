@@ -1,2 +1,2 @@
-export * from './lotes.controller';
-export * from './tandas.controller';
+export * from '../../lotes/controllers/lotes.controller';
+export * from '../../lotes/controllers/tandas.controller';

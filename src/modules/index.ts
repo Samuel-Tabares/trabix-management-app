@@ -1,4 +1,4 @@
 export * from './health';
 export * from './auth';
 export * from './usuarios';
-export * from './lotes';
+export * from './lotes-module-corregido';

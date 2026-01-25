@@ -9,8 +9,8 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes/domain/tanda.repository.interface';
-import { CalculadoraTandasService } from '../../../lotes/domain/calculadora-tandas.service';
+} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
+import { CalculadoraTandasService } from '../../../lotes-module-corregido/domain/calculadora-tandas.service';
 import {
     ICuadreRepository,
     CUADRE_REPOSITORY,

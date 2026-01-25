@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {EstadoTanda, Tanda} from '@prisma/client';
-import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
+import { PrismaService } from '@infrastructure/database/prisma/prisma.service';
 import { ITandaRepository } from '../domain/tanda.repository.interface';
 
 /**

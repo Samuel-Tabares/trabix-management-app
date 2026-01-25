@@ -4,8 +4,8 @@ import { Decimal } from 'decimal.js';
 import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '../../domain/lote.repository.interface';
-import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../dto';
+} from '../../../lotes/domain/lote.repository.interface';
+import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../../../lotes/application/dto';
 
 /**
  * Query para listar lotes con filtros y paginación

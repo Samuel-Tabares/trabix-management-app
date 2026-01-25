@@ -1,4 +1,4 @@
-export * from './dto';
-export * from './commands';
-export * from './queries';
+export * from '../../lotes/application/dto';
+export * from '../../lotes/application/commands';
+export * from '../../lotes/application/queries';
 export * from './events';

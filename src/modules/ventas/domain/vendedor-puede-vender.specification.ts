@@ -11,7 +11,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../lotes/domain/tanda.repository.interface';
+} from '../../lotes-module-corregido/domain/tanda.repository.interface';
 import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 /**

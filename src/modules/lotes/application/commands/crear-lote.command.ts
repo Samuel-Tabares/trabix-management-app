@@ -5,15 +5,15 @@ import {
     ILoteRepository,
     LOTE_REPOSITORY,
     LoteConTandas,
-} from '../../domain/lote.repository.interface';
+} from '../../../lotes/domain/lote.repository.interface';
 import {
     IUsuarioRepository,
     USUARIO_REPOSITORY,
 } from '../../../usuarios/domain/usuario.repository.interface';
 import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
 import { CalculadoraTandasService } from '../../domain/calculadora-tandas.service';
-import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { CreateLoteDto } from '../dto';
+import { DomainException } from '@domain/exceptions/domain.exception';
+import { CreateLoteDto } from '../../../lotes/application/dto';
 
 /**
  * Command para crear un nuevo lote

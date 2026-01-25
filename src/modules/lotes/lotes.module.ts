@@ -42,28 +42,31 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 /**
  * Módulo de Lotes y Tandas
  * Según secciones 3 y 4 del documento
- * 
+ *
  * Gestiona:
- * - Creación y activación de lotes
+ * - Solicitud y creación de lotes
+ * - Activación de lotes (confirma pago)
+ * - Cancelación de solicitudes
  * - División en tandas (2 para ≤50, 3 para >50)
  * - Cálculos de inversión (50/50)
  * - Transiciones de estado de tandas
  * - Resumen financiero
+ *
+ * Límites:
+ * - Máximo 2 lotes en estado CREADO por vendedor
+ * - Inversión mínima del vendedor: $20,000
  */
 @Module({
   imports: [
     CqrsModule,
     ConfigModule,
-      forwardRef(() => UsuariosModule),
+    forwardRef(() => UsuariosModule),
     forwardRef(() => CuadresModule),
     forwardRef(() => MiniCuadresModule),
     forwardRef(() => FondoRecompensasModule),
     forwardRef(() => NotificacionesModule),
   ],
-  controllers: [
-    LotesController,
-    TandasController,
-  ],
+  controllers: [LotesController, TandasController],
   providers: [
     // Repositories
     {
