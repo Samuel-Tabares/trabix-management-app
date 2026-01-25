@@ -107,6 +107,7 @@ enum TipoNotificacion {
   CUADRE_EXITOSO
   TANDA_LIBERADA
   MANUAL
+  PREMIO_RECIBIDO
 }
 
 enum CanalNotificacion {
@@ -633,10 +634,12 @@ model MovimientoFondo {
   monto            Decimal  @db.Decimal(12, 2)
   concepto         String
   loteId           String?  // Solo para entradas (referencia al lote)
+  vendedorBeneficiarioId String?
   
   fechaTransaccion DateTime @default(now())
 
   @@index([tipo, fechaTransaccion])
+  @@index([vendedorBeneficiarioId])
   @@map("movimientos_fondo")
 }
 
