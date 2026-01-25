@@ -12,7 +12,7 @@
  * - src/modules/notificaciones/application/dto/
  * - src/modules/admin/application/dto/
  * 
- * Cada módulo exporta sus propios DTOs desde su carpeta dto/index.ts
+ * Cada módulo exporta sus propios DTOs desde su carpeta dto/indexx.ts
  */
 
 // Re-export DTOs de respuesta comunes

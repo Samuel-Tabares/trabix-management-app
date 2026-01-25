@@ -105,11 +105,4 @@ export class TandaAutoTransitJob {
       this.logger.error(`Error transicionando tanda ${tanda.id}`, error);
     }
   }
-
-  /**
-   * Métoddo para forzar ejecución (testing)
-   */
-  async forceExecute(): Promise<void> {
-    await this.execute();
-  }
 }
