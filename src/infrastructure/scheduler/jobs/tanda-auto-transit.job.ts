@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import {ConfigService} from "@nestjs/config";
 
 /**
  * TandaAutoTransitJob
@@ -18,9 +19,12 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 @Injectable()
 export class TandaAutoTransitJob {
   private readonly logger = new Logger(TandaAutoTransitJob.name);
-  private readonly HORAS_PARA_TRANSITO = 2;
+  private readonly TIEMPO_AUTO_TRANSITO_HORAS = this.configService.get<number>('tiempos.autoTransitoHoras') ?? 2;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+      private readonly prisma: PrismaService,
+      private readonly configService: ConfigService,
+) {}
 
   /**
    * Se ejecuta cada 5 minutos
@@ -29,7 +33,7 @@ export class TandaAutoTransitJob {
   async execute(): Promise<void> {
     try {
       const cutoffDate = new Date();
-      cutoffDate.setHours(cutoffDate.getHours() - this.HORAS_PARA_TRANSITO);
+      cutoffDate.setHours(cutoffDate.getHours() - this.TIEMPO_AUTO_TRANSITO_HORAS);
 
       // Buscar tandas elegibles para transición
       const tandasElegibles = await this.prisma.tanda.findMany({

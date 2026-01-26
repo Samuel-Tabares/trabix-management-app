@@ -30,20 +30,6 @@ const daysAgo = (d: number) => new Date(Date.now() - d * 24 * 60 * 60 * 1000);
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60 * 1000);
 const decimal = (n: number) => new Prisma.Decimal(n);
 
-// Variables globales de configuración
-let CONFIG: Record<string, number> = {};
-let COSTO_INV: number;
-let APORTE_FONDO: number;
-let PRECIO_UNI: number;
-let PRECIO_PROMO: number;
-let PRECIO_SL: number;
-let DEPOSITO: number;
-let MENS_CON: number;
-let MENS_SIN: number;
-let DANO_NEV: number;
-let DANO_PIJ: number;
-let MIN_VMAYOR: number;
-
 async function main() {
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════════════════════╗');
@@ -80,9 +66,10 @@ async function main() {
 
     const configuraciones = [
         // === PRECIOS (claves originales) ===
-        { clave: 'COSTO_PERCIBIDO', valor: '2400', tipo: 'DECIMAL', descripcion: 'Costo percibido por TRABIX', categoria: 'PRECIOS' },
+        { clave: 'APORTE_FONDO_POR_TRABIX', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX (alias)', categoria: 'PRECIOS' },
+        { clave: 'COSTO_PERCIBIDO_TRABIX', valor: '2400', tipo: 'DECIMAL', descripcion: 'Costo percibido por TRABIX', categoria: 'PRECIOS' },
         { clave: 'PRECIO_PROMO', valor: '12000', tipo: 'DECIMAL', descripcion: 'Precio PROMO (2 con licor)', categoria: 'PRECIOS' },
-        { clave: 'PRECIO_UNIDAD_LICOR', valor: '8000', tipo: 'DECIMAL', descripcion: 'Precio UNIDAD con licor', categoria: 'PRECIOS' },
+        { clave: 'PRECIO_UNIDAD_LICOR_LICOR', valor: '8000', tipo: 'DECIMAL', descripcion: 'Precio UNIDAD con licor', categoria: 'PRECIOS' },
         { clave: 'PRECIO_UNIDAD_SIN_LICOR', valor: '7000', tipo: 'DECIMAL', descripcion: 'Precio UNIDAD sin licor', categoria: 'PRECIOS' },
         { clave: 'PRECIO_MAYOR_20_LICOR', valor: '4900', tipo: 'DECIMAL', descripcion: 'Precio mayor >20 con licor', categoria: 'PRECIOS' },
         { clave: 'PRECIO_MAYOR_50_LICOR', valor: '4700', tipo: 'DECIMAL', descripcion: 'Precio mayor >50 con licor', categoria: 'PRECIOS' },
@@ -91,16 +78,7 @@ async function main() {
         { clave: 'PRECIO_MAYOR_50_SIN_LICOR', valor: '4500', tipo: 'DECIMAL', descripcion: 'Precio mayor >50 sin licor', categoria: 'PRECIOS' },
         { clave: 'PRECIO_MAYOR_100_SIN_LICOR', valor: '4200', tipo: 'DECIMAL', descripcion: 'Precio mayor >100 sin licor', categoria: 'PRECIOS' },
 
-        // === PRECIOS (claves requeridas por test-scenarios) ===
-        { clave: 'COSTO_INVERSION_TRABIX', valor: '2400', tipo: 'DECIMAL', descripcion: 'Costo inversión por TRABIX (alias)', categoria: 'PRECIOS' },
-        { clave: 'PRECIO_UNIDAD', valor: '8000', tipo: 'DECIMAL', descripcion: 'Precio UNIDAD (alias)', categoria: 'PRECIOS' },
-        { clave: 'PRECIO_SIN_LICOR', valor: '7000', tipo: 'DECIMAL', descripcion: 'Precio sin licor (alias)', categoria: 'PRECIOS' },
-        { clave: 'COSTO_DEPOSITO', valor: '49990', tipo: 'DECIMAL', descripcion: 'Costo depósito equipamiento (alias)', categoria: 'PRECIOS' },
-        { clave: 'MINIMO_VENTA_MAYOR', valor: '20', tipo: 'INT', descripcion: 'Mínimo unidades para venta mayor', categoria: 'PRECIOS' },
-
         // === PORCENTAJES ===
-        { clave: 'APORTE_FONDO', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX', categoria: 'PORCENTAJES' },
-        { clave: 'APORTE_FONDO_POR_TRABIX', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX (alias)', categoria: 'PORCENTAJES' },
         { clave: 'PORCENTAJE_GANANCIA_VENDEDOR_60_40', valor: '60', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 60/40', categoria: 'PORCENTAJES' },
         { clave: 'PORCENTAJE_GANANCIA_ADMIN_60_40', valor: '40', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia admin 60/40', categoria: 'PORCENTAJES' },
         { clave: 'PORCENTAJE_GANANCIA_VENDEDOR_50_50', valor: '50', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 50/50', categoria: 'PORCENTAJES' },
@@ -131,24 +109,40 @@ async function main() {
     }
     console.log(`   ✅ ${configuraciones.length} configuraciones creadas`);
 
+    //variables globales de config y asignación inmediata
+    let CONFIG: Record<string, number> = {};
+    let COSTO_INV: number = CONFIG['COSTO_PERCIBIDO_TRABIX'];
+    let APORTE_FONDO: number = CONFIG['APORTE_FONDO_POR_TRABIX'];
+    let PRECIO_UNI: number = CONFIG['PRECIO_UNIDAD_LICOR_LICOR'];
+    let PRECIO_PROMO: number = CONFIG['PRECIO_PROMO'];
+    let PRECIO_SL: number = CONFIG['PRECIO_UNIDAD_SIN_LICOR'];
+    let DEPOSITO: number = CONFIG['DEPOSITO_EQUIPAMIENTO'];
+    let MENS_CON: number = CONFIG['MENSUALIDAD_CON_DEPOSITO'];
+    let MENS_SIN: number = CONFIG['MENSUALIDAD_SIN_DEPOSITO'];
+    let DANO_NEV: number = CONFIG['COSTO_DANO_NEVERA'];
+    let DANO_PIJ: number = CONFIG['COSTO_DANO_PIJAMA'];
+    let PRECIO_MAYOR_20_LICOR: number = CONFIG['PRECIO_MAYOR_20_LICOR'];
+    let PRECIO_MAYOR_50_LICOR: number = CONFIG['PRECIO_MAYOR_50_LICOR'];
+    let PRECIO_MAYOR_100_LICOR: number = CONFIG['PRECIO_MAYOR_100_LICOR'];
+    let PRECIO_MAYOR_20_SIN_LICOR: number = CONFIG['PRECIO_MAYOR_20_SIN_LICOR'];
+    let PRECIO_MAYOR_50_SIN_LICOR: number = CONFIG['PRECIO_MAYOR_50_SIN_LICOR'];
+    let PRECIO_MAYOR_100_SIN_LICOR: number = CONFIG['PRECIO_MAYOR_100_SIN_LICOR'];
+    let PORC_GAN_VENDEDOR_60_40: number = CONFIG['PORCENTAJE_GANANCIA_VENDEDOR_60_40'];
+    let PORC_GAN_ADMIN_60_40: number = CONFIG['PORCENTAJE_GANANCIA_ADMIN_60_40'];
+    let PORC_GAN_VENDEDOR_50_50: number = CONFIG['PORCENTAJE_GANANCIA_VENDEDOR_50_50'];
+    let PORC_INV_VENDEDOR: number = CONFIG['PORCENTAJE_INVERSION_VENDEDOR'];
+    let LIMITE_REGALOS: number = CONFIG['LIMITE_REGALOS'];
+    let TRIGGER_T2: number = CONFIG['TRIGGER_CUADRE_T2'];
+    let TRIGGER_T3: number = CONFIG['TRIGGER_CUADRE_T3'];
+    let TRIGGER_T1_2T: number = CONFIG['TRIGGER_CUADRE_T1_2TANDAS'];
+    let TRIGGER_T2_2T: number = CONFIG['TRIGGER_CUADRE_T2_2TANDAS'];
+    let TIEMPO_AUTO_TRANSITO: number = CONFIG['TIEMPO_AUTO_TRANSITO_HORAS'];
+
     // Cargar configuraciones en memoria
     const cfgs = await prisma.configuracionSistema.findMany();
     for (const cfg of cfgs) CONFIG[cfg.clave] = Number.parseFloat(cfg.valor);
 
-    // Asignar a variables globales
-    COSTO_INV = CONFIG['COSTO_INVERSION_TRABIX'];
-    APORTE_FONDO = CONFIG['APORTE_FONDO_POR_TRABIX'];
-    PRECIO_UNI = CONFIG['PRECIO_UNIDAD'];
-    PRECIO_PROMO = CONFIG['PRECIO_PROMO'];
-    PRECIO_SL = CONFIG['PRECIO_SIN_LICOR'];
-    DEPOSITO = CONFIG['COSTO_DEPOSITO'];
-    MENS_CON = CONFIG['MENSUALIDAD_CON_DEPOSITO'];
-    MENS_SIN = CONFIG['MENSUALIDAD_SIN_DEPOSITO'];
-    DANO_NEV = CONFIG['COSTO_DANO_NEVERA'];
-    DANO_PIJ = CONFIG['COSTO_DANO_PIJAMA'];
-    MIN_VMAYOR = CONFIG['MINIMO_VENTA_MAYOR'];
-
-    console.log(`   📋 Configs cargadas: INV=$${COSTO_INV} | UNI=$${PRECIO_UNI} | PROMO=$${PRECIO_PROMO}`);
+    console.log(`   📋 Configs cargadas`);
 
     // =========================================================================
     // PARTE 3: USUARIO ADMIN
@@ -180,10 +174,10 @@ async function main() {
     console.log('\n📊 [4/12] Creando stock admin...');
 
     let stock = await prisma.stockAdmin.findFirst();
-    if (!stock) {
-        stock = await prisma.stockAdmin.create({ data: { stockFisico: 50000 } });
+    if (stock) {
+        await prisma.stockAdmin.update({where: {id: stock.id}, data: {stockFisico: 50000}});
     } else {
-        await prisma.stockAdmin.update({ where: { id: stock.id }, data: { stockFisico: 50000 } });
+        await prisma.stockAdmin.create({data: {stockFisico: 50000}});
     }
     console.log('   ✅ Stock admin: 50,000 unidades');
 
@@ -951,75 +945,224 @@ async function main() {
     const vc = await prisma.venta.count();
     console.log(`   ✅ ${vc} ventas creadas`);
 
+    //helper para calcular precio de venta al mayor
+    function getPrecioMayor(cantidad: number, conLicor: boolean): number {
+        if (conLicor) {
+            if (cantidad >= 100) return PRECIO_MAYOR_100_LICOR;
+            if (cantidad >= 50) return PRECIO_MAYOR_50_LICOR;
+            return PRECIO_MAYOR_20_LICOR;
+        } else {
+            if (cantidad >= 100) return PRECIO_MAYOR_100_SIN_LICOR;
+            if (cantidad >= 50) return PRECIO_MAYOR_50_SIN_LICOR;
+            return PRECIO_MAYOR_20_SIN_LICOR;
+        }
+    }
     // =========================================================================
-    // PARTE 10: VENTAS AL MAYOR
-    // =========================================================================
+// PARTE 10: VENTAS AL MAYOR
+// =========================================================================
     console.log('\n💼 [10/12] Creando ventas al mayor...');
+
+// ===== ESCENARIOS CON LICOR =====
+
+// Escenario 1: 20-49 unidades, CON licor, ANTICIPADO, PENDIENTE
+    const cant1 = 25;
+    const precio1 = getPrecioMayor(cant1, true);
     await prisma.ventaMayor.create({
         data: {
             vendedorId: v['1000000037'].id,
-            cantidadUnidades: MIN_VMAYOR + 9,
-            precioUnidad: decimal(PRECIO_UNI),
+            cantidadUnidades: cant1,
+            precioUnidad: decimal(precio1),
+            conLicor: true,
             modalidad: 'ANTICIPADO',
             estado: 'PENDIENTE',
-            ingresoBruto: decimal((MIN_VMAYOR + 9) * PRECIO_UNI),
+            ingresoBruto: decimal(cant1 * precio1),
             fechaRegistro: daysAgo(3),
         },
     });
 
+// Escenario 2: 20-49 unidades, CON licor, CONTRAENTREGA, COMPLETADA
+    const cant2 = 35;
+    const precio2 = getPrecioMayor(cant2, true);
     await prisma.ventaMayor.create({
         data: {
             vendedorId: v['1000000038'].id,
-            cantidadUnidades: MIN_VMAYOR + 4,
-            precioUnidad: decimal(PRECIO_UNI),
-            modalidad: 'ANTICIPADO',
+            cantidadUnidades: cant2,
+            precioUnidad: decimal(precio2),
+            conLicor: true,
+            modalidad: 'CONTRAENTREGA',
             estado: 'COMPLETADA',
-            ingresoBruto: decimal((MIN_VMAYOR + 4) * PRECIO_UNI),
+            ingresoBruto: decimal(cant2 * precio2),
             fechaRegistro: daysAgo(10),
             fechaCompletada: daysAgo(5),
         },
     });
 
+// Escenario 3: 50-99 unidades, CON licor, ANTICIPADO, PENDIENTE
+    const cant3 = 60;
+    const precio3 = getPrecioMayor(cant3, true);
     await prisma.ventaMayor.create({
         data: {
             vendedorId: v['1000000039'].id,
-            cantidadUnidades: MIN_VMAYOR,
-            precioUnidad: decimal(PRECIO_UNI),
-            modalidad: 'CONTRAENTREGA',
+            cantidadUnidades: cant3,
+            precioUnidad: decimal(precio3),
+            conLicor: true,
+            modalidad: 'ANTICIPADO',
             estado: 'PENDIENTE',
-            ingresoBruto: decimal(MIN_VMAYOR * PRECIO_UNI),
+            ingresoBruto: decimal(cant3 * precio3),
             fechaRegistro: daysAgo(2),
         },
     });
 
+// Escenario 4: 50-99 unidades, CON licor, CONTRAENTREGA, COMPLETADA
+    const cant4 = 75;
+    const precio4 = getPrecioMayor(cant4, true);
     await prisma.ventaMayor.create({
         data: {
             vendedorId: v['1000000040'].id,
-            cantidadUnidades: MIN_VMAYOR + 14,
-            precioUnidad: decimal(PRECIO_UNI),
+            cantidadUnidades: cant4,
+            precioUnidad: decimal(precio4),
+            conLicor: true,
             modalidad: 'CONTRAENTREGA',
             estado: 'COMPLETADA',
-            ingresoBruto: decimal((MIN_VMAYOR + 14) * PRECIO_UNI),
+            ingresoBruto: decimal(cant4 * precio4),
             fechaRegistro: daysAgo(15),
             fechaCompletada: daysAgo(10),
         },
     });
 
-    const lf = await prisma.lote.findFirst({ where: { vendedorId: v['1000000041'].id } });
-    if (lf) {
-        await prisma.ventaMayor.create({
-            data: {
-                vendedorId: v['1000000041'].id,
-                cantidadUnidades: 30,
-                precioUnidad: decimal(PRECIO_UNI),
-                modalidad: 'ANTICIPADO',
-                estado: 'COMPLETADA',
-                ingresoBruto: decimal(30 * PRECIO_UNI),
-                fechaRegistro: daysAgo(20),
-                fechaCompletada: daysAgo(15),
-            },
-        });
-    }
+// Escenario 5: 100+ unidades, CON licor, ANTICIPADO, COMPLETADA
+    const cant5 = 120;
+    const precio5 = getPrecioMayor(cant5, true);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000041'].id,
+            cantidadUnidades: cant5,
+            precioUnidad: decimal(precio5),
+            conLicor: true,
+            modalidad: 'ANTICIPADO',
+            estado: 'COMPLETADA',
+            ingresoBruto: decimal(cant5 * precio5),
+            fechaRegistro: daysAgo(20),
+            fechaCompletada: daysAgo(15),
+        },
+    });
+
+// Escenario 6: 100+ unidades, CON licor, CONTRAENTREGA, PENDIENTE
+    const cant6 = 150;
+    const precio6 = getPrecioMayor(cant6, true);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000042'].id,
+            cantidadUnidades: cant6,
+            precioUnidad: decimal(precio6),
+            conLicor: true,
+            modalidad: 'CONTRAENTREGA',
+            estado: 'PENDIENTE',
+            ingresoBruto: decimal(cant6 * precio6),
+            fechaRegistro: daysAgo(1),
+        },
+    });
+
+// ===== ESCENARIOS SIN LICOR =====
+
+// Escenario 7: 20-49 unidades, SIN licor, ANTICIPADO, PENDIENTE
+    const cant7 = 22;
+    const precio7 = getPrecioMayor(cant7, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000043'].id,
+            cantidadUnidades: cant7,
+            precioUnidad: decimal(precio7),
+            conLicor: false,
+            modalidad: 'ANTICIPADO',
+            estado: 'PENDIENTE',
+            ingresoBruto: decimal(cant7 * precio7),
+            fechaRegistro: daysAgo(4),
+        },
+    });
+
+// Escenario 8: 20-49 unidades, SIN licor, CONTRAENTREGA, COMPLETADA
+    const cant8 = 40;
+    const precio8 = getPrecioMayor(cant8, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000044'].id,
+            cantidadUnidades: cant8,
+            precioUnidad: decimal(precio8),
+            conLicor: false,
+            modalidad: 'CONTRAENTREGA',
+            estado: 'COMPLETADA',
+            ingresoBruto: decimal(cant8 * precio8),
+            fechaRegistro: daysAgo(12),
+            fechaCompletada: daysAgo(7),
+        },
+    });
+
+// Escenario 9: 50-99 unidades, SIN licor, ANTICIPADO, COMPLETADA
+    const cant9 = 55;
+    const precio9 = getPrecioMayor(cant9, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000045'].id,
+            cantidadUnidades: cant9,
+            precioUnidad: decimal(precio9),
+            conLicor: false,
+            modalidad: 'ANTICIPADO',
+            estado: 'COMPLETADA',
+            ingresoBruto: decimal(cant9 * precio9),
+            fechaRegistro: daysAgo(18),
+            fechaCompletada: daysAgo(14),
+        },
+    });
+
+// Escenario 10: 50-99 unidades, SIN licor, CONTRAENTREGA, PENDIENTE
+    const cant10 = 80;
+    const precio10 = getPrecioMayor(cant10, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000046'].id,
+            cantidadUnidades: cant10,
+            precioUnidad: decimal(precio10),
+            conLicor: false,
+            modalidad: 'CONTRAENTREGA',
+            estado: 'PENDIENTE',
+            ingresoBruto: decimal(cant10 * precio10),
+            fechaRegistro: daysAgo(5),
+        },
+    });
+
+// Escenario 11: 100+ unidades, SIN licor, ANTICIPADO, PENDIENTE
+    const cant11 = 100;
+    const precio11 = getPrecioMayor(cant11, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000047'].id,
+            cantidadUnidades: cant11,
+            precioUnidad: decimal(precio11),
+            conLicor: false,
+            modalidad: 'ANTICIPADO',
+            estado: 'PENDIENTE',
+            ingresoBruto: decimal(cant11 * precio11),
+            fechaRegistro: daysAgo(2),
+        },
+    });
+
+// Escenario 12: 100+ unidades, SIN licor, CONTRAENTREGA, COMPLETADA
+    const cant12 = 200;
+    const precio12 = getPrecioMayor(cant12, false);
+    await prisma.ventaMayor.create({
+        data: {
+            vendedorId: v['1000000048'].id,
+            cantidadUnidades: cant12,
+            precioUnidad: decimal(precio12),
+            conLicor: false,
+            modalidad: 'CONTRAENTREGA',
+            estado: 'COMPLETADA',
+            ingresoBruto: decimal(cant12 * precio12),
+            fechaRegistro: daysAgo(25),
+            fechaCompletada: daysAgo(20),
+        },
+    });
 
     const vmc = await prisma.ventaMayor.count();
     console.log(`   ✅ ${vmc} ventas mayor creadas`);
