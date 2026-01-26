@@ -1,6 +1,5 @@
 import {
     Injectable,
-    ExecutionContext,
     HttpException,
     HttpStatus,
 } from '@nestjs/common';
@@ -16,9 +15,6 @@ import { Reflector } from '@nestjs/core';
  */
 @Injectable()
 export class LoginThrottleGuard extends ThrottlerGuard {
-    private readonly loginTtl: number;
-    private readonly loginLimit: number;
-
     constructor(
         storageService: ThrottlerStorage,
         configService: ConfigService,
@@ -41,9 +37,6 @@ export class LoginThrottleGuard extends ThrottlerGuard {
             storageService,
             reflector,
         );
-
-        this.loginTtl = ttl;
-        this.loginLimit = limit;
     }
 
     /**
@@ -66,36 +59,5 @@ export class LoginThrottleGuard extends ThrottlerGuard {
             },
             HttpStatus.TOO_MANY_REQUESTS,
         );
-    }
-
-    /**
-     * Override para usar nuestra configuración personalizada
-     */
-    async canActivate(context: ExecutionContext): Promise<boolean> {
-        const request = context.switchToHttp().getRequest();
-        const tracker = await this.getTracker(request);
-
-        const { totalHits, timeToExpire } = await this.storageService.increment(
-            tracker,
-            this.loginTtl,
-            this.loginLimit,
-            this.loginTtl,
-            'login',
-        );
-
-        if (totalHits > this.loginLimit) {
-            await this.throwThrottlingException();
-        }
-
-        // Agregar headers de rate limit a la respuesta
-        const response = context.switchToHttp().getResponse();
-        response.header('X-RateLimit-Limit', this.loginLimit);
-        response.header(
-            'X-RateLimit-Remaining',
-            Math.max(0, this.loginLimit - totalHits),
-        );
-        response.header('X-RateLimit-Reset', Math.ceil(timeToExpire / 1000));
-
-        return true;
     }
 }
