@@ -6,7 +6,7 @@ import {
   UsuarioJerarquia,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { UsuarioJerarquiaDto, UsuarioBasicoDto } from '../dto';
+import { UsuarioJerarquiaDto, UsuarioBasicoDto } from '../dto/usuario-response.dto';
 
 /**
  * Query para obtener la jerarquía de un usuario

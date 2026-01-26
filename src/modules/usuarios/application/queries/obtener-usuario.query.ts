@@ -6,7 +6,7 @@ import {
   USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto';
+import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto/usuario-response.dto';
 
 /**
  * Query para obtener un usuario por ID

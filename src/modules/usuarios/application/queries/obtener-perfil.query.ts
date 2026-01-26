@@ -5,7 +5,7 @@ import {
   IUsuarioRepository,
   USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
-import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto';
+import { UsuarioResponseDto, UsuarioBasicoDto } from '../dto/usuario-response.dto';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 /**

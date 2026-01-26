@@ -6,7 +6,7 @@ import {
   USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { UpdateUsuarioDto } from '../dto';
+import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 
 /**
  * Command para actualizar un usuario

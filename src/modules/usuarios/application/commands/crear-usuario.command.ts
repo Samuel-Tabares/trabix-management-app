@@ -8,7 +8,7 @@ import {
   USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { CreateUsuarioDto } from '../dto';
+import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 
 /**
  * Command para crear un nuevo usuario

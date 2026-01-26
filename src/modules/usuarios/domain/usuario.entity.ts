@@ -55,36 +55,8 @@ export class UsuarioEntity {
     this.eliminado = props.eliminado;
     this.fechaEliminacion = props.fechaEliminacion;
   }
-
-  /**
-   * Nombre completo del usuario
-   */
-  get nombreCompleto(): string {
-    return `${this.nombre} ${this.apellidos}`;
-  }
-
-  /**
-   * Verifica si el usuario está activo y puede operar
-   * Según sección 1.2: Usuario ACTIVO puede crear lotes, registrar ventas, etc.
-   */
-  get puedeOperar(): boolean {
-    return (
-      this.estado === 'ACTIVO' &&
-      !this.eliminado &&
-      !this.requiereCambioPassword &&
-      !this.estaBloqueado
-    );
-  }
-
-  /**
-   * Verifica si el usuario está bloqueado temporalmente
-   */
-  get estaBloqueado(): boolean {
-    return this.bloqueadoHasta !== null && this.bloqueadoHasta > new Date();
-  }
-
-  /**
-   * Valida si puede cambiar a un nuevo estado
+    /**
+     * Valida si puede cambiar a un nuevo estado
    */
   validarCambioEstado(nuevoEstado: EstadoUsuario): void {
     if (this.eliminado) {
@@ -118,45 +90,6 @@ export class UsuarioEntity {
       );
     }
   }
-
-  /**
-   * Valida si puede ser reclutador de otro usuario
-   */
-  validarComoReclutador(): void {
-    if (this.eliminado) {
-      throw new DomainException(
-        'USR_005',
-        'Un usuario eliminado no puede ser reclutador',
-      );
-    }
-
-    if (this.estado !== 'ACTIVO') {
-      throw new DomainException(
-        'USR_005',
-        'Un usuario inactivo no puede ser reclutador',
-      );
-    }
-
-    if (this.rol === 'ADMIN') {
-      // Admin puede ser reclutador (caso base según sección 2.3)
-      return;
-    }
-  }
-
-  /**
-   * Obtiene el modelo de negocio del usuario
-   * Según sección 2.4:
-   * - MODELO 60/40: vendedores que ingresan directamente con Admin (nivel N2)
-   * - MODELO 50/50: vendedores que ingresan con un reclutador (nivel N3 en adelante)
-   */
-  obtenerModeloNegocio(reclutadorRol: Rol | null): '60_40' | '50_50' {
-    // Si no tiene reclutador o el reclutador es ADMIN → 60/40
-    if (!this.reclutadorId || reclutadorRol === 'ADMIN') {
-      return '60_40';
-    }
-    // Si el reclutador es VENDEDOR o RECLUTADOR → 50/50
-    return '50_50';
-  }
 }
 
 /**
@@ -182,18 +115,4 @@ export interface UsuarioEntityProps {
   fechaCambioEstado: Date | null;
   eliminado: boolean;
   fechaEliminacion: Date | null;
-}
-
-/**
- * Props para crear un nuevo usuario
- */
-export interface CrearUsuarioProps {
-  cedula: number;
-  nombre: string;
-  apellidos: string;
-  email: string;
-  telefono: string;
-  passwordHash: string;
-  reclutadorId?: string | null;
-  rol?: Rol;
 }

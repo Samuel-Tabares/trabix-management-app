@@ -24,20 +24,30 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { AuthGuard } from '@nestjs/passport';
 
 // Auth
-import { CurrentUser, AuthenticatedUser, Roles } from '../../auth/decorators';
+import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
+import { Roles } from '../../auth/decorators/roles.decorator';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 
 // DTOs
 import {
-  CreateUsuarioDto,
-  UpdateUsuarioDto,
-  CambiarEstadoDto,
-  QueryUsuariosDto,
   UsuarioResponseDto,
   UsuariosPaginadosDto,
   UsuarioJerarquiaDto,
-} from '../application/dto';
+} from '../application/dto/usuario-response.dto';
 
+import {
+    CreateUsuarioDto,
+} from '../application/dto/create-usuario.dto';
+import {
+    UpdateUsuarioDto,
+} from '../application/dto/update-usuario.dto';
+
+import {
+    QueryUsuariosDto,
+} from '../application/dto/query-usuarios.dto';
+import {
+    CambiarEstadoDto,
+} from '../application/dto/cambiar-estado.dto';
 // Commands
 import {
   CrearUsuarioCommand,

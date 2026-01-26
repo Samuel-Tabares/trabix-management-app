@@ -6,11 +6,14 @@ import {
   USUARIO_REPOSITORY,
 } from '../../domain/usuario.repository.interface';
 import {
-  QueryUsuariosDto,
   UsuarioResponseDto,
   UsuariosPaginadosDto,
   UsuarioBasicoDto,
-} from '../dto';
+} from '../dto/usuario-response.dto';
+import {
+    QueryUsuariosDto,
+} from '../dto/query-usuarios.dto';
+
 
 /**
  * Query para listar usuarios con filtros y paginación
