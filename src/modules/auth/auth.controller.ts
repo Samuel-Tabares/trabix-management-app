@@ -17,7 +17,7 @@ import {
   ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './services/auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -33,6 +33,7 @@ import {
 } from './decorators/current-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 
 /**
  * Controlador de autenticación
@@ -61,16 +62,17 @@ export class AuthController {
    * POST /auth/login
    * Inicia sesión con cédula y contraseña
    *
-   * Implementa bloqueo progresivo:
-   * - 5 intentos fallidos: 15 minutos de bloqueo
-   * - 10 intentos fallidos: 1 hora de bloqueo
-   * - 15 intentos fallidos: 24 horas de bloqueo
-   * - 20+ intentos fallidos: Requiere desbloqueo por admin
+   * Implementa bloqueo progresivo (configurado via .env):
+   * - LOCKOUT_LEVEL1_ATTEMPTS intentos fallidos: LOCKOUT_LEVEL1_MINUTES minutos de bloqueo
+   * - LOCKOUT_LEVEL2_ATTEMPTS intentos fallidos: LOCKOUT_LEVEL2_MINUTES minutos de bloqueo
+   * - LOCKOUT_LEVEL3_ATTEMPTS intentos fallidos: LOCKOUT_LEVEL3_MINUTES minutos de bloqueo
+   * - LOCKOUT_PERMANENT_ATTEMPTS+ intentos fallidos: Requiere desbloqueo por admin
    */
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 intentos por minuto por IP
+  @SkipThrottle({ default: true }) // Salta el throttle global
+  @UseGuards(LoginThrottleGuard) // Usa el guard personalizado con config del .env
   @ApiOperation({
     summary: 'Iniciar sesión',
     description:

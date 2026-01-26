@@ -54,27 +54,57 @@ interface LockoutConfig {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-
-  /**
-   * Configuración de bloqueo progresivo
-   * - 5 intentos: 15 minutos
-   * - 10 intentos: 1 hora
-   * - 15 intentos: 24 horas
-   * - 20+ intentos: Requiere desbloqueo por admin
-   */
-  private readonly LOCKOUT_LEVELS: LockoutConfig[] = [
-    { minAttempts: 5, maxAttempts: 9, durationMinutes: 15, requiresAdmin: false },
-    { minAttempts: 10, maxAttempts: 14, durationMinutes: 60, requiresAdmin: false },
-    { minAttempts: 15, maxAttempts: 19, durationMinutes: 1440, requiresAdmin: false },
-    { minAttempts: 20, maxAttempts: Infinity, durationMinutes: 0, requiresAdmin: true },
-  ];
+  private readonly LOCKOUT_LEVELS: LockoutConfig[];
+  private readonly bcryptRounds: number;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly tokenBlacklistService: TokenBlacklistService,
-  ) {}
+  ) {
+    // Cargar bcrypt rounds desde configuración
+    this.bcryptRounds = this.configService.get<number>('security.bcryptRounds', 12);
+
+    // Cargar configuración de bloqueo progresivo desde .env
+    const level1Attempts = this.configService.get<number>('lockout.level1.attempts', 5);
+    const level1Minutes = this.configService.get<number>('lockout.level1.durationMinutes', 15);
+
+    const level2Attempts = this.configService.get<number>('lockout.level2.attempts', 10);
+    const level2Minutes = this.configService.get<number>('lockout.level2.durationMinutes', 60);
+
+    const level3Attempts = this.configService.get<number>('lockout.level3.attempts', 15);
+    const level3Minutes = this.configService.get<number>('lockout.level3.durationMinutes', 1440);
+
+    const permanentAttempts = this.configService.get<number>('lockout.permanentLockoutAttempts', 20);
+
+    this.LOCKOUT_LEVELS = [
+      {
+        minAttempts: level1Attempts,
+        maxAttempts: level2Attempts - 1,
+        durationMinutes: level1Minutes,
+        requiresAdmin: false,
+      },
+      {
+        minAttempts: level2Attempts,
+        maxAttempts: level3Attempts - 1,
+        durationMinutes: level2Minutes,
+        requiresAdmin: false,
+      },
+      {
+        minAttempts: level3Attempts,
+        maxAttempts: permanentAttempts - 1,
+        durationMinutes: level3Minutes,
+        requiresAdmin: false,
+      },
+      {
+        minAttempts: permanentAttempts,
+        maxAttempts: Infinity,
+        durationMinutes: 0,
+        requiresAdmin: true,
+      },
+    ];
+  }
 
   /**
    * LOGIN
@@ -242,10 +272,7 @@ export class AuthService {
       );
     }
 
-    const hash = await bcrypt.hash(
-      dto.newPassword,
-      this.configService.get<number>('security.bcryptRounds', 12),
-    );
+    const hash = await bcrypt.hash(dto.newPassword, this.bcryptRounds);
 
     await this.prisma.usuario.update({
       where: { id: userId },
@@ -285,10 +312,7 @@ export class AuthService {
     // Generar contraseña temporal segura
     const passwordTemporal = this.generateTemporaryPassword();
 
-    const hash = await bcrypt.hash(
-      passwordTemporal,
-      this.configService.get<number>('security.bcryptRounds', 12),
-    );
+    const hash = await bcrypt.hash(passwordTemporal, this.bcryptRounds);
 
     await this.prisma.usuario.update({
       where: { id: usuarioId },
@@ -368,7 +392,7 @@ export class AuthService {
     isLocked: boolean;
     message: string;
   } {
-    // Verificar si requiere desbloqueo por admin (20+ intentos)
+    // Verificar si requiere desbloqueo por admin (nivel permanente)
     const permanentLockout = this.LOCKOUT_LEVELS.find(
       (level) => level.requiresAdmin && user.intentosFallidos >= level.minAttempts,
     );
@@ -489,6 +513,9 @@ export class AuthService {
     const accessJti = uuidv4();
     const refreshJti = uuidv4();
 
+    const accessExpiration = this.configService.get<string>('jwt.accessExpiration', '15m');
+    const accessExpirationSeconds = this.configService.get<number>('jwt.accessExpirationSeconds', 900);
+
     const accessToken = this.jwtService.sign(
       {
         sub: user.id,
@@ -497,7 +524,7 @@ export class AuthService {
       },
       {
         secret: this.configService.get<string>('jwt.secret'),
-        expiresIn: this.configService.get<string>('jwt.accessExpiration', '15m'),
+        expiresIn: accessExpiration,
       },
     );
 
@@ -515,7 +542,7 @@ export class AuthService {
     await this.prisma.usuario.update({
       where: { id: user.id },
       data: {
-        refreshTokenHash: await bcrypt.hash(refreshToken, 10),
+        refreshTokenHash: await bcrypt.hash(refreshToken, this.bcryptRounds),
       },
     });
 
@@ -532,7 +559,7 @@ export class AuthService {
       accessToken,
       refreshToken,
       tokenType: 'Bearer',
-      expiresIn: 900,
+      expiresIn: accessExpirationSeconds,
       user: userResponse,
     };
   }

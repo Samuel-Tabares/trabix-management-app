@@ -27,6 +27,23 @@ const configuration = () => ({
         corsOrigin: process.env.CORS_ORIGIN,
     },
 
+    // Configuración de bloqueo progresivo por intentos fallidos
+    lockout: {
+        level1: {
+            attempts: Number(process.env.LOCKOUT_LEVEL1_ATTEMPTS),
+            durationMinutes: Number(process.env.LOCKOUT_LEVEL1_MINUTES),
+        },
+        level2: {
+            attempts: Number(process.env.LOCKOUT_LEVEL2_ATTEMPTS),
+            durationMinutes: Number(process.env.LOCKOUT_LEVEL2_MINUTES),
+        },
+        level3: {
+            attempts: Number(process.env.LOCKOUT_LEVEL3_ATTEMPTS),
+            durationMinutes: Number(process.env.LOCKOUT_LEVEL3_MINUTES),
+        },
+        permanentLockoutAttempts: Number(process.env.LOCKOUT_PERMANENT_ATTEMPTS),
+    },
+
     business: {
         costoPercibidoTrabix: Number(process.env.COSTO_PERCIBIDO_TRABIX),
         aporteFondoPorTrabix: Number(process.env.APORTE_FONDO_POR_TRABIX),

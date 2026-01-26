@@ -93,6 +93,20 @@ export const validationSchema = Joi.object({
     CORS_ORIGIN: Joi.string().default('http://localhost:3001'),
 
     // ======================
+    // Bloqueo Progresivo (Lockout)
+    // ======================
+    LOCKOUT_LEVEL1_ATTEMPTS: Joi.number().integer().min(1).default(5),
+    LOCKOUT_LEVEL1_MINUTES: Joi.number().integer().min(1).default(15),
+
+    LOCKOUT_LEVEL2_ATTEMPTS: Joi.number().integer().min(1).default(10),
+    LOCKOUT_LEVEL2_MINUTES: Joi.number().integer().min(1).default(60),
+
+    LOCKOUT_LEVEL3_ATTEMPTS: Joi.number().integer().min(1).default(15),
+    LOCKOUT_LEVEL3_MINUTES: Joi.number().integer().min(1).default(1440),
+
+    LOCKOUT_PERMANENT_ATTEMPTS: Joi.number().integer().min(1).default(20),
+
+    // ======================
     // Negocio - Precios
     // ======================
     COSTO_PERCIBIDO_TRABIX: Joi.number().integer().min(0).default(2400),

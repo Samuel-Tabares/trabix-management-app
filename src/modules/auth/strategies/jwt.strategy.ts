@@ -3,7 +3,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService, AccessTokenPayload } from '../services/auth.service';
-//TODO: corregir archivo completo y verificar funcionalidad
 /**
  * JWT Strategy para Passport
  * Según sección 22.1 del documento

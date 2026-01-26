@@ -8,7 +8,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthService } from './services/auth.service';
 import { TokenBlacklistService } from './services/token-blacklist.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import {  RolesGuard } from './guards/roles.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 
 /**
  * Módulo de autenticación
@@ -35,12 +36,14 @@ import {  RolesGuard } from './guards/roles.guard';
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
+    LoginThrottleGuard,
   ],
   exports: [
     AuthService,
     TokenBlacklistService,
     JwtAuthGuard,
     RolesGuard,
+    LoginThrottleGuard,
   ],
 })
 export class AuthModule {}
