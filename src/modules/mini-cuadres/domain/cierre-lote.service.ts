@@ -62,29 +62,4 @@ export class CierreLoteService {
       hayGananciasRestantes: true,
     };
   }
-
-  /**
-   * Determina si un lote puede ser cerrado
-   * 
-   * Un lote puede cerrarse cuando:
-   * - Todas las tandas están finalizadas
-   * - El mini-cuadre está en estado PENDIENTE o EXITOSO
-   */
-  puedeSerCerrado(
-    todasTandasFinalizadas: boolean,
-    miniCuadreEstado: string,
-  ): boolean {
-    return (
-      todasTandasFinalizadas &&
-      (miniCuadreEstado === 'PENDIENTE' || miniCuadreEstado === 'EXITOSO')
-    );
-  }
-
-  /**
-   * Determina si el stock de la última tanda ha llegado a cero
-   * Este es el trigger para activar el mini-cuadre
-   */
-  stockUltimaTandaEsCero(stockActual: number): boolean {
-    return stockActual <= 0;
-  }
 }

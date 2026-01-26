@@ -5,11 +5,13 @@ import {
     CUADRE_REPOSITORY,
 } from '../../domain/cuadre.repository.interface';
 import {
-    QueryCuadresDto,
     CuadresPaginadosDto,
     CuadreResponseDto,
     TandaCuadreResponseDto,
-} from '../dto';
+} from '../dto/cuadre-response.dto';
+import {
+    QueryCuadresDto,
+} from '../dto/query-cuadres.dto';
 
 /**
  * Query para listar cuadres con filtros y paginación

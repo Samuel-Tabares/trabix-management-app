@@ -173,45 +173,6 @@ export class CalculadoraGananciasService {
       ...resultado,
     };
   }
-
-  /**
-   * Calcula la ganancia del admin hasta el momento
-   * Útil para calcular monto esperado en cuadres
-   */
-  calcularGananciaAdminHastaMomento(
-    dineroRecaudado: Decimal,
-    inversionTotal: Decimal,
-    modelo: ModeloNegocio,
-    jerarquia?: JerarquiaReclutador[],
-  ): Decimal {
-    const resultado = this.calcularGanancias(
-      dineroRecaudado,
-      inversionTotal,
-      modelo,
-      jerarquia,
-    );
-    return resultado.gananciaAdmin;
-  }
-
-  /**
-   * Calcula el monto esperado para un cuadre según el concepto
-   */
-  calcularMontoEsperadoCuadre(
-    concepto: 'INVERSION_ADMIN' | 'GANANCIAS' | 'MIXTO',
-    inversionAdmin: Decimal,
-    gananciaAdmin: Decimal,
-  ): Decimal {
-    switch (concepto) {
-      case 'INVERSION_ADMIN':
-        return inversionAdmin;
-      case 'GANANCIAS':
-        return gananciaAdmin;
-      case 'MIXTO':
-        return inversionAdmin.plus(gananciaAdmin);
-      default:
-        return new Decimal(0);
-    }
-  }
 }
 
 /**

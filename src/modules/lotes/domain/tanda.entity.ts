@@ -44,79 +44,8 @@ export class TandaEntity {
     this.fechaEnCasa = props.fechaEnCasa;
     this.fechaFinalizada = props.fechaFinalizada;
   }
-
-  /**
-   * Stock consumido en ventas normales (sin contar ventas al mayor)
-   */
-  get stockConsumidoNormal(): number {
-    return this.stockInicial - this.stockActual - this.stockConsumidoPorMayor;
-  }
-
-  /**
-   * Porcentaje de stock restante
-   */
-  get porcentajeStockRestante(): number {
-    if (this.stockInicial === 0) return 0;
-    return (this.stockActual / this.stockInicial) * 100;
-  }
-
-  /**
-   * Indica si la tanda está disponible para ventas
-   * Solo EN_CASA permite ventas
-   */
-  get disponibleParaVentas(): boolean {
-    return this.estado === 'EN_CASA' && this.stockActual > 0;
-  }
-
-  /**
-   * Indica si debe transicionar a EN_TRÁNSITO automáticamente
-   * (2 horas después de ser liberada)
-   */
-  debeTransicionarAEnTransito(ahora: Date = new Date()): boolean {
-    if (this.estado !== 'LIBERADA' || !this.fechaLiberacion) {
-      return false;
-    }
-    const dosHorasDespues = new Date(this.fechaLiberacion.getTime() + 2 * 60 * 60 * 1000);
-    return ahora >= dosHorasDespues;
-  }
-
-  /**
-   * Valida transición de estado usando State Pattern
-   * Según sección 4.4: Las tandas nunca retroceden
-   */
-  validarTransicion(nuevoEstado: EstadoTanda): void {
-    const transicionesValidas: Record<EstadoTanda, EstadoTanda[]> = {
-      INACTIVA: ['LIBERADA'],
-      LIBERADA: ['EN_TRANSITO'],
-      EN_TRANSITO: ['EN_CASA'],
-      EN_CASA: ['FINALIZADA'],
-      FINALIZADA: [],
-    };
-
-    const permitidas = transicionesValidas[this.estado];
-    
-    if (!permitidas.includes(nuevoEstado)) {
-      throw new DomainException(
-        'TND_002',
-        `Transición de estado inválida: ${this.estado} → ${nuevoEstado}`,
-        { 
-          estadoActual: this.estado, 
-          estadoSolicitado: nuevoEstado,
-          transicionesPermitidas: permitidas,
-        },
-      );
-    }
-  }
-
-  /**
-   * Valida si se puede liberar la tanda
-   */
-  validarLiberacion(): void {
-    this.validarTransicion('LIBERADA');
-  }
-
-  /**
-   * Valida si se puede confirmar entrega (EN_TRÁNSITO → EN_CASA)
+    /**
+     * Valida si se puede confirmar entrega (EN_TRÁNSITO → EN_CASA)
    */
   validarConfirmacionEntrega(): void {
     if (this.estado !== 'EN_TRANSITO') {
@@ -124,27 +53,6 @@ export class TandaEntity {
         'TND_002',
         'Solo se puede confirmar entrega de tandas EN_TRÁNSITO',
         { estadoActual: this.estado },
-      );
-    }
-  }
-
-  /**
-   * Valida si hay stock suficiente para una venta
-   */
-  validarStockParaVenta(cantidad: number): void {
-    if (this.estado !== 'EN_CASA') {
-      throw new DomainException(
-        'VNT_002',
-        'No hay tanda EN_CASA disponible para ventas',
-        { estadoTanda: this.estado },
-      );
-    }
-
-    if (this.stockActual < cantidad) {
-      throw new DomainException(
-        'VNT_001',
-        'Stock insuficiente en la tanda',
-        { stockDisponible: this.stockActual, cantidadSolicitada: cantidad },
       );
     }
   }
@@ -167,13 +75,4 @@ export interface TandaEntityProps {
   fechaEnTransito: Date | null;
   fechaEnCasa: Date | null;
   fechaFinalizada: Date | null;
-}
-
-/**
- * Props para crear una nueva tanda
- */
-export interface CrearTandaProps {
-  loteId: string;
-  numero: number;
-  stockInicial: number;
 }

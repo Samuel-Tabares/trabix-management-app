@@ -32,43 +32,8 @@ export class MiniCuadreEntity {
     this.fechaPendiente = props.fechaPendiente;
     this.fechaExitoso = props.fechaExitoso;
   }
-
-  /**
-   * Indica si el mini-cuadre está inactivo
-   */
-  get estaInactivo(): boolean {
-    return this.estado === 'INACTIVO';
-  }
-
-  /**
-   * Indica si el mini-cuadre está pendiente de confirmación
-   */
-  get estaPendiente(): boolean {
-    return this.estado === 'PENDIENTE';
-  }
-
-  /**
-   * Indica si el mini-cuadre fue exitoso
-   */
-  get esExitoso(): boolean {
-    return this.estado === 'EXITOSO';
-  }
-
-  /**
-   * Valida que se puede activar el mini-cuadre (pasar a PENDIENTE)
-   */
-  validarActivacion(): void {
-    if (this.estado !== 'INACTIVO') {
-      throw new DomainException(
-        'MCU_001',
-        'Solo se puede activar un mini-cuadre en estado INACTIVO',
-        { estadoActual: this.estado },
-      );
-    }
-  }
-
-  /**
-   * Valida que se puede confirmar el mini-cuadre
+    /**
+     * Valida que se puede confirmar el mini-cuadre
    */
   validarConfirmacion(): void {
     if (this.estado !== 'PENDIENTE') {

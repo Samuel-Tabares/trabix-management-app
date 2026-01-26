@@ -7,7 +7,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
+} from '../../../lotes/domain/tanda.repository.interface';
 import { VentaEntity } from '../../domain/venta.entity';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
@@ -24,7 +24,7 @@ export class RechazarVentaCommand implements ICommand {
 /**
  * Handler del comando RechazarVenta
  * Según sección 6.2 del documento
- * 
+ *
  * Si RECHAZA:
  * - Stock se revierte automáticamente
  * - Se elimina totalmente

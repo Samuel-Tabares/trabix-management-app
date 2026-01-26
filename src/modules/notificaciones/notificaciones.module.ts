@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificacionesController } from './controllers';
 
 // Gateways
-import { NotificacionesGateway } from './gateways';
+import { NotificacionesGateway } from './gateways/notificaciones.gateway';
 
 // Domain
 import { NOTIFICACION_REPOSITORY } from './domain/notificacion.entity';
@@ -18,11 +18,13 @@ import { PrismaNotificacionRepository } from './infrastructure';
 // Factories
 import {
   NotificationContentFactory,
-  NotificationDispatcher,
-  WebSocketChannel,
-  PushChannel,
-  WhatsAppChannel,
-} from './factories';
+} from './factories/notification-content.factory';
+import {
+    NotificationDispatcher,
+    WebSocketChannel,
+    PushChannel,
+    WhatsAppChannel,
+} from './factories/notification-dispatcher';
 
 // Application
 import { NotificacionCommandHandlers } from './application/commands';

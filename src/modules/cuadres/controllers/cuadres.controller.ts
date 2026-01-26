@@ -26,11 +26,15 @@ import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-us
 
 // DTOs
 import {
-    ConfirmarCuadreDto,
-    QueryCuadresDto,
     CuadreResponseDto,
     CuadresPaginadosDto,
-} from '../application/dto';
+} from '../application/dto/cuadre-response.dto';
+import {
+    QueryCuadresDto,
+} from '../application/dto/query-cuadres.dto';
+import {
+    ConfirmarCuadreDto,
+} from '../application/dto/confirmar-cuadre.dto';
 
 // Commands
 import { ConfirmarCuadreCommand } from '../application/commands';

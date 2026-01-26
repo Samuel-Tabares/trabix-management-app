@@ -190,59 +190,6 @@ export class ConfiguracionResponseDto {
   @ApiProperty()
   ultimaModificacion!: Date;
 }
-
-export class HistorialConfiguracionResponseDto {
-  @ApiProperty()
-  id!: string;
-
-  @ApiProperty()
-  clave!: string;
-
-  @ApiProperty()
-  valorAnterior!: string;
-
-  @ApiProperty()
-  valorNuevo!: string;
-
-  @ApiProperty()
-  modificadoPorId!: string;
-
-  @ApiPropertyOptional()
-  motivo?: string | null;
-
-  @ApiProperty()
-  fechaCambio!: Date;
-}
-
-export class QueryHistorialDto {
-  @ApiPropertyOptional({ description: 'Filtrar por clave de configuración' })
-  @IsOptional()
-  @IsString()
-  clave?: string;
-
-  @ApiPropertyOptional({
-    default: PAGINATION_DEFAULTS.DEFAULT_SKIP,
-    minimum: 0,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(0)
-  skip?: number = PAGINATION_DEFAULTS.DEFAULT_SKIP;
-
-  @ApiPropertyOptional({
-    default: 50,
-    minimum: 1,
-    maximum: PAGINATION_DEFAULTS.MAX_TAKE,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(PAGINATION_DEFAULTS.MAX_TAKE)
-  take?: number = 50;
-}
-
 // ========== TipoInsumo DTOs ==========
 
 export class CrearTipoInsumoDto {
@@ -263,17 +210,6 @@ export class ModificarTipoInsumoDto {
   @IsString({ message: 'El nombre debe ser texto' })
   nombre?: string;
 }
-
-export class QueryTiposInsumoDto {
-  @ApiPropertyOptional({
-    description: 'Filtrar por estado activo',
-    enum: ['true', 'false'],
-  })
-  @IsOptional()
-  @IsString()
-  activo?: string;
-}
-
 export class TipoInsumoResponseDto {
   @ApiProperty()
   id!: string;
@@ -317,21 +253,6 @@ export class DeficitResponseDto {
   @ApiProperty({ description: 'Si hay déficit' })
   hayDeficit!: boolean;
 }
-
-export class StockReservadoDetalleDto {
-  @ApiProperty()
-  loteId!: string;
-
-  @ApiProperty()
-  vendedorNombre!: string;
-
-  @ApiProperty()
-  cantidadReservada!: number;
-
-  @ApiProperty()
-  tandaNumero!: number;
-}
-
 // ========== Dashboard DTOs ==========
 
 export class ResumenDashboardDto {

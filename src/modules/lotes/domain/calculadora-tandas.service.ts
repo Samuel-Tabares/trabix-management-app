@@ -56,16 +56,8 @@ export class CalculadoraTandasService {
       { numero: 3, stockInicial: tanda3 },
     ];
   }
-
-  /**
-   * Calcula el número de tandas según la cantidad
-   */
-  calcularNumeroTandas(cantidadTrabix: number): number {
-    return cantidadTrabix <= 50 ? 2 : 3;
-  }
-
-  /**
-   * Verifica si se debe disparar un cuadre basado en el stock restante
+    /**
+     * Verifica si se debe disparar un cuadre basado en el stock restante
    * Según sección 16.6 del documento
    * 
    * LOTE 3 TANDAS:
@@ -153,56 +145,6 @@ export class CalculadoraTandasService {
       razon: null,
       porcentajeStock: (stockActual / stockInicial) * 100,
     };
-  }
-
-  /**
-   * Verifica si se debe disparar el mini-cuadre
-   * Según sección 16.6: stock_actual de última tanda = 0
-   */
-  verificarTriggerMiniCuadre(
-    numeroTanda: number,
-    totalTandas: number,
-    stockActual: number,
-  ): boolean {
-    // Solo la última tanda dispara mini-cuadre
-    if (numeroTanda !== totalTandas) {
-      return false;
-    }
-    return stockActual === 0;
-  }
-
-  /**
-   * Calcula el monto esperado para un cuadre
-   * Según sección 16.7 del documento
-   */
-  calcularMontoEsperadoCuadre(
-    numeroTanda: number,
-    totalTandas: number,
-    inversionAdmin: Decimal,
-    gananciaAdminHastaMomento: Decimal,
-    gananciaAdminRestante: Decimal,
-  ): Decimal {
-    if (totalTandas === 3) {
-      switch (numeroTanda) {
-        case 1:
-          return inversionAdmin;
-        case 2:
-          return gananciaAdminHastaMomento;
-        case 3:
-          return gananciaAdminRestante;
-      }
-    }
-
-    if (totalTandas === 2) {
-      switch (numeroTanda) {
-        case 1:
-          return inversionAdmin.plus(gananciaAdminHastaMomento);
-        case 2:
-          return gananciaAdminRestante;
-      }
-    }
-
-    return new Decimal(0);
   }
 }
 

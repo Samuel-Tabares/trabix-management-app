@@ -20,7 +20,8 @@ import { LoggingInterceptor } from './presentation/http/interceptors/logging.int
 import { IdempotencyInterceptor } from './presentation/http/interceptors/idempotency.interceptor';
 
 // Guards
-import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import {  RolesGuard } from './modules/auth/guards/roles.guard';
 
 // Services
 import { RedisService } from './infrastructure/cache/redis.service';

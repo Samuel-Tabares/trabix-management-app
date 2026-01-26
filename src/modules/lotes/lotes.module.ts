@@ -3,7 +3,8 @@ import { CqrsModule } from '@nestjs/cqrs';
 import { ConfigModule } from '@nestjs/config';
 
 // Controllers
-import { LotesController, TandasController } from './controllers';
+import { TandasController } from './controllers/tandas.controller';
+import { LotesController } from './controllers/lotes.controller'
 
 // Repositories
 import { PrismaLoteRepository } from './infrastructure/prisma-lote.repository';

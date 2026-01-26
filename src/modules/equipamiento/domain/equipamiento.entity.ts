@@ -64,27 +64,14 @@ export class EquipamientoEntity {
    * Calcula la mensualidad según si tiene depósito o no
    */
   static calcularMensualidad(tieneDeposito: boolean): Decimal {
-    return tieneDeposito
-      ? EQUIPAMIENTO_CONFIG.MENSUALIDAD_CON_DEPOSITO
-      : EQUIPAMIENTO_CONFIG.MENSUALIDAD_SIN_DEPOSITO;
+      return new Decimal(
+          tieneDeposito
+              ? EQUIPAMIENTO_CONFIG.MENSUALIDAD_CON_DEPOSITO
+              : EQUIPAMIENTO_CONFIG.MENSUALIDAD_SIN_DEPOSITO
+      );
   }
-
-  /**
-   * Indica si el equipamiento está activo
-   */
-  get estaActivo(): boolean {
-    return this.estado === 'ACTIVO';
-  }
-
-  /**
-   * Indica si tiene deudas pendientes
-   */
-  get tieneDeudas(): boolean {
-    return this.deudaDano.greaterThan(0) || this.deudaPerdida.greaterThan(0);
-  }
-
-  /**
-   * Calcula la deuda total de equipamiento
+    /**
+     * Calcula la deuda total de equipamiento
    */
   get deudaTotal(): Decimal {
     return this.deudaDano.plus(this.deudaPerdida);

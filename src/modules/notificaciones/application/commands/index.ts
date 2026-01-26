@@ -6,9 +6,11 @@ import {
     NOTIFICACION_REPOSITORY,
 } from '../../domain/notificacion.entity';
 import {
-    NotificationContentFactory,
     NotificationDispatcher,
-} from '../../factories';
+} from '../../factories/notification-dispatcher';
+import {
+    NotificationContentFactory,
+} from '../../factories/notification-content.factory';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 // ========== EnviarNotificacionCommand ==========

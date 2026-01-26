@@ -5,7 +5,7 @@ import {
     CUADRE_REPOSITORY,
 } from '../../domain/cuadre.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { CuadreResponseDto, TandaCuadreResponseDto } from '../dto';
+import { CuadreResponseDto, TandaCuadreResponseDto } from '../dto/cuadre-response.dto';
 
 /**
  * Query para obtener un cuadre por ID

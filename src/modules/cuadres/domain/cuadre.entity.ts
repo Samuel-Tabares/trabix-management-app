@@ -52,37 +52,8 @@ export class CuadreEntity {
   get montoEsperadoAjustado(): Decimal {
     return this.montoEsperado.minus(this.montoCubiertoPorMayor);
   }
-
-  /**
-   * Indica si el cuadre está inactivo
-   */
-  get estaInactivo(): boolean {
-    return this.estado === 'INACTIVO';
-  }
-
-  /**
-   * Indica si el cuadre está pendiente
-   */
-  get estaPendiente(): boolean {
-    return this.estado === 'PENDIENTE';
-  }
-
-  /**
-   * Indica si el cuadre fue exitoso
-   */
-  get esExitoso(): boolean {
-    return this.estado === 'EXITOSO';
-  }
-
-  /**
-   * Indica si fue cerrado por un cuadre al mayor
-   */
-  get fueCerradoPorMayor(): boolean {
-    return this.cerradoPorCuadreMayorId !== null;
-  }
-
-  /**
-   * Valida si el cuadre puede ser activado (INACTIVO → PENDIENTE)
+    /**
+     * Valida si el cuadre puede ser activado (INACTIVO → PENDIENTE)
    */
   validarActivacion(): void {
     if (this.estado !== 'INACTIVO') {
@@ -138,13 +109,4 @@ export interface CuadreEntityProps {
   fechaPendiente: Date | null;
   fechaExitoso: Date | null;
   version: number;
-}
-
-/**
- * Datos para crear un cuadre
- */
-export interface CrearCuadreData {
-  tandaId: string;
-  concepto: ConceptoCuadre;
-  montoEsperado: Decimal;
 }

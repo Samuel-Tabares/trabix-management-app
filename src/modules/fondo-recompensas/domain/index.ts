@@ -43,17 +43,8 @@ export interface MovimientoFondo {
  */
 @Injectable()
 export class FondoRecompensasService {
-  /**
-   * Calcula el aporte al fondo por un lote
-   * NOTA: Este métoddo usa valor por defecto. El valor real
-   * se calcula en CalculadoraInversionService usando ConfigService.
-   */
-  calcularAporteLote(cantidadTrabix: number): Decimal {
-    return FONDO_CONFIG.APORTE_POR_TRABIX_DEFAULT.times(cantidadTrabix);
-  }
-
-  /**
-   * Valida que se puede realizar una salida
+    /**
+     * Valida que se puede realizar una salida
    */
   validarSalida(saldoActual: Decimal, montoSalida: Decimal): void {
     if (montoSalida.lessThanOrEqualTo(0)) {

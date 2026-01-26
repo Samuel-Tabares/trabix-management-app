@@ -136,23 +136,24 @@ export class NotificacionesGateway
    * Autentica un cliente con JWT
    */
   private async authenticateClient(client: Socket, token: string): Promise<void> {
-    try {
-      const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('jwt.accessSecret'),
-      });
+      try {
+          const payload = this.jwtService.verify(token, {
+              secret: this.configService.get<string>('jwt.accessSecret'),
+          });
 
-      this.connectedUsers.set(client.id, {
-        socketId: client.id,
-        usuarioId: payload.sub,
-      });
+          this.connectedUsers.set(client.id, {
+              socketId: client.id,
+              usuarioId: payload.sub,
+          });
 
-      // Unir al room del usuario
-      client.join(`user:${payload.sub}`);
+          client.join(`user:${payload.sub}`);
 
-      this.logger.log(`Usuario ${payload.sub} autenticado en socket ${client.id}`);
-    } catch (error) {
-      throw new UnauthorizedException('Token inválido');
-    }
+          this.logger.log(
+              `Usuario ${payload.sub} autenticado en socket ${client.id}`,
+          );
+      } catch {
+          throw new UnauthorizedException('Token inválido');
+      }
   }
 
   // ========== Métodos para emitir eventos ==========
@@ -163,45 +164,5 @@ export class NotificacionesGateway
   enviarNotificacion(usuarioId: string, notificacion: any): void {
     this.server.to(`user:${usuarioId}`).emit('nueva-notificacion', notificacion);
     this.logger.log(`Notificación enviada a usuario ${usuarioId}`);
-  }
-
-  /**
-   * Emite evento de stock actualizado
-   */
-  emitirStockActualizado(usuarioId: string, data: any): void {
-    this.server.to(`user:${usuarioId}`).emit('stock-actualizado', data);
-  }
-
-  /**
-   * Emite evento de cuadre pendiente
-   */
-  emitirCuadrePendiente(usuarioId: string, data: any): void {
-    this.server.to(`user:${usuarioId}`).emit('cuadre-pendiente', data);
-  }
-
-  /**
-   * Emite evento de tanda liberada
-   */
-  emitirTandaLiberada(usuarioId: string, data: any): void {
-    this.server.to(`user:${usuarioId}`).emit('tanda-liberada', data);
-  }
-
-  /**
-   * Verifica si un usuario está conectado
-   */
-  isUserConnected(usuarioId: string): boolean {
-    for (const user of this.connectedUsers.values()) {
-      if (user.usuarioId === usuarioId) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Obtiene el número de usuarios conectados
-   */
-  getConnectedUsersCount(): number {
-    return this.connectedUsers.size;
   }
 }

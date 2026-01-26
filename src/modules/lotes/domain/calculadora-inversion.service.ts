@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
-import { ModeloNegocio } from '@prisma/client';
 
 /**
  * Servicio de dominio para cálculos de inversión
@@ -56,67 +55,8 @@ export class CalculadoraInversionService {
       inversionVendedor,
     };
   }
-
-  /**
-   * Calcula las ganancias según el modelo de negocio
-   * Según secciones 16.5 y 2.4 del documento
-   */
-  calcularGanancias(
-    gananciaTotal: Decimal,
-    modeloNegocio: ModeloNegocio,
-    cadenaReclutadores: CadenaReclutador[] = [],
-  ): DistribucionGanancias {
-    if (gananciaTotal.lessThanOrEqualTo(0)) {
-      return {
-        gananciaVendedor: new Decimal(0),
-        gananciaAdmin: new Decimal(0),
-        gananciasReclutadores: [],
-      };
-    }
-
-    if (modeloNegocio === 'MODELO_60_40') {
-      // MODELO 60/40: 60% vendedor, 40% admin
-      return {
-        gananciaVendedor: gananciaTotal.times(0.6),
-        gananciaAdmin: gananciaTotal.times(0.4),
-        gananciasReclutadores: [],
-      };
-    }
-
-    // MODELO 50/50 con cascada
-    // ganancia_vendedor_N = ganancia_total × 0.5
-    // ganancia_reclutador_N-1 = ganancia_vendedor_N × 0.5
-    // ganancia_reclutador_N-2 = ganancia_reclutador_N-1 × 0.5
-    // ... (continúa hasta admin)
-    // ganancia_admin = ganancia_ultimo_reclutador
-
-    const gananciaVendedor = gananciaTotal.times(0.5);
-    const gananciasReclutadores: GananciaReclutador[] = [];
-    
-    let gananciaAnterior = gananciaVendedor;
-    
-    for (const reclutador of cadenaReclutadores) {
-      const gananciaReclutador = gananciaAnterior.times(0.5);
-      gananciasReclutadores.push({
-        reclutadorId: reclutador.id,
-        nivel: reclutador.nivel,
-        monto: gananciaReclutador,
-      });
-      gananciaAnterior = gananciaReclutador;
-    }
-
-    // Admin recibe lo mismo que el último reclutador
-    const gananciaAdmin = gananciaAnterior.times(0.5);
-
-    return {
-      gananciaVendedor,
-      gananciaAdmin,
-      gananciasReclutadores,
-    };
-  }
-
-  /**
-   * Calcula el aporte al fondo de recompensas
+    /**
+     * Calcula el aporte al fondo de recompensas
    * Según sección 16.9: aporte_por_trabix = $200
    */
   calcularAporteFondo(cantidadTrabix: number): Decimal {
@@ -131,15 +71,6 @@ export class CalculadoraInversionService {
   calcularMaximoRegalos(cantidadTrabix: number): number {
     return Math.floor(cantidadTrabix * 0.08);
   }
-
-  /**
-   * Calcula la ganancia no obtenida por regalos
-   * Según sección 16.11: ganancia_no_obtenida = cantidad_regalos × $8,000
-   */
-  calcularGananciaNoObtenida(cantidadRegalos: number): Decimal {
-    const PRECIO_UNIDAD = new Decimal(8000);
-    return PRECIO_UNIDAD.times(cantidadRegalos);
-  }
 }
 
 /**
@@ -150,29 +81,11 @@ export interface InversionesLote {
   inversionAdmin: Decimal;
   inversionVendedor: Decimal;
 }
-
 /**
- * Información de reclutador en la cadena
- */
-export interface CadenaReclutador {
-  id: string;
-  nivel: number;
-}
-
-/**
- * Ganancia de un reclutador específico
+ * TODO:Ganancia de un reclutador específico
  */
 export interface GananciaReclutador {
   reclutadorId: string;
   nivel: number;
   monto: Decimal;
-}
-
-/**
- * Distribución completa de ganancias
- */
-export interface DistribucionGanancias {
-  gananciaVendedor: Decimal;
-  gananciaAdmin: Decimal;
-  gananciasReclutadores: GananciaReclutador[];
 }

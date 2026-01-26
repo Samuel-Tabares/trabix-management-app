@@ -9,7 +9,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
+} from '../../../lotes/domain/tanda.repository.interface';
 import { VendedorPuedeVenderSpecification } from '../../domain/vendedor-puede-vender.specification';
 import { RegaloPermitidoSpecification } from '../../domain/regalo-permitido.specification';
 import { PRECIOS_VENTA, TRABIX_POR_TIPO } from '../../domain/venta.entity';

@@ -3,14 +3,16 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Domain
 import {
-    CUADRE_REPOSITORY,
     CalculadoraGananciasService,
     Modelo6040Strategy,
     Modelo5050CascadaStrategy,
-} from './domain';
+} from './domain/calculadora-ganancias.service';
+import{
+    CUADRE_REPOSITORY,
+} from './domain/cuadre.repository.interface'
 
 // Infrastructure
-import { PrismaCuadreRepository } from './infrastructure';
+import { PrismaCuadreRepository } from './infrastructure/prisma-cuadre.repository';
 
 // Application - Commands, Queries, Events
 import { CuadreCommandHandlers } from './application/commands';
@@ -18,7 +20,7 @@ import { CuadreQueryHandlers } from './application/queries';
 import { CuadreEventHandlers } from './application/events';
 
 // Controllers
-import { CuadresController } from './controllers';
+import { CuadresController } from './controllers/cuadres.controller';
 
 // Módulos necesarios
 import { LotesModule } from '../lotes/lotes.module';

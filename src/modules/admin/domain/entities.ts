@@ -127,20 +127,6 @@ export class PedidoStockEntity {
       );
     }
   }
-
-  /**
-   * Verifica si el pedido está en un estado final
-   */
-  estaFinalizado(): boolean {
-    return this.estado === 'RECIBIDO' || this.estado === 'CANCELADO';
-  }
-
-  /**
-   * Verifica si el pedido puede ser modificado
-   */
-  puedeSerModificado(): boolean {
-    return this.estado === 'BORRADOR';
-  }
 }
 
 export interface PedidoStockProps {
@@ -212,30 +198,8 @@ export class ConfiguracionSistemaEntity {
     this.ultimaModificacion = props.ultimaModificacion;
     this.modificadoPorId = props.modificadoPorId;
   }
-
-  /**
-   * Obtiene el valor como número
-   */
-  getValorNumerico(): number {
-    return Number.parseFloat(this.valor);
-  }
-
-  /**
-   * Obtiene el valor como Decimal
-   */
-  getValorDecimal(): Decimal {
-    return new Decimal(this.valor);
-  }
-
-  /**
-   * Obtiene el valor como booleano
-   */
-  getValorBooleano(): boolean {
-    return this.valor.toLowerCase() === 'true' || this.valor === '1';
-  }
-
-  /**
-   * Valida que se puede modificar
+    /**
+     * Valida que se puede modificar
    */
   validarModificacion(): void {
     if (!this.modificable) {
@@ -303,50 +267,4 @@ export interface TipoInsumoProps {
   esObligatorio: boolean;
   activo: boolean;
   fechaCreacion: Date;
-}
-
-// ========== StockAdmin Entity ==========
-
-export class StockAdminEntity {
-  readonly id: string;
-  readonly stockFisico: number;
-  readonly ultimoPedidoId: string | null;
-  readonly ultimaActualizacion: Date;
-
-  constructor(props: StockAdminProps) {
-    this.id = props.id;
-    this.stockFisico = props.stockFisico;
-    this.ultimoPedidoId = props.ultimoPedidoId;
-    this.ultimaActualizacion = props.ultimaActualizacion;
-  }
-
-  /**
-   * Verifica si hay stock suficiente
-   */
-  tieneStockSuficiente(cantidad: number): boolean {
-    return this.stockFisico >= cantidad;
-  }
-
-  /**
-   * Valida que se puede decrementar el stock
-   */
-  validarDecremento(cantidad: number): void {
-    if (cantidad <= 0) {
-      throw new DomainException('STK_001', 'La cantidad debe ser mayor a 0');
-    }
-
-    if (!this.tieneStockSuficiente(cantidad)) {
-      throw new DomainException('STK_002', 'Stock insuficiente', {
-        stockActual: this.stockFisico,
-        cantidadSolicitada: cantidad,
-      });
-    }
-  }
-}
-
-export interface StockAdminProps {
-  id: string;
-  stockFisico: number;
-  ultimoPedidoId: string | null;
-  ultimaActualizacion: Date;
 }

@@ -128,31 +128,8 @@ export class NotificationDispatcher {
 
     return channel.send(notificacion);
   }
-
-  /**
-   * Despacha una notificación a múltiples canales
-   */
-  async dispatchMultiple(
-    notificacion: NotificacionEntity,
-    canales: CanalNotificacion[],
-  ): Promise<Map<CanalNotificacion, boolean>> {
-    const results = new Map<CanalNotificacion, boolean>();
-
-    for (const canal of canales) {
-      const channel = this.channels.get(canal);
-      if (channel) {
-        const success = await channel.send(notificacion);
-        results.set(canal, success);
-      } else {
-        results.set(canal, false);
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Obtiene el canal WebSocket para configuración del gateway
+    /**
+     * Obtiene el canal WebSocket para configuración del gateway
    */
   getWebSocketChannel(): WebSocketChannel {
     return this.webSocketChannel;

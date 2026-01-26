@@ -50,7 +50,6 @@ import {
   ListarPedidosStockQuery,
   ObtenerStockAdminQuery,
   ObtenerDeficitQuery,
-  ObtenerStockReservadoQuery,
 } from '../application/queries';
 
 /**
@@ -96,11 +95,7 @@ export class StockAdminController {
    * GET /admin/stock/reservado
    * Ver desglose de stock reservado
    */
-  @Get('reservado')
-  @ApiOperation({ summary: 'Ver desglose de stock reservado' })
-  async obtenerReservado(): Promise<any[]> {
-    return this.queryBus.execute(new ObtenerStockReservadoQuery());
-  }
+//TODO:
 }
 
 /**

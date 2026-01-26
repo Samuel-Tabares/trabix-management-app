@@ -49,52 +49,8 @@ export class LoteEntity {
     this.fechaActivacion = props.fechaActivacion;
     this.fechaFinalizacion = props.fechaFinalizacion;
   }
-
-  /**
-   * Número de tandas según cantidad de TRABIX
-   * Según sección 3.3: ≤50 → 2 tandas, >50 → 3 tandas
-   */
-  get numeroTandas(): number {
-    return this.cantidadTrabix <= 50 ? 2 : 3;
-  }
-
-  /**
-   * Ganancia total actual (si es positiva)
-   * ganancia_total = dinero_recaudado - inversion_total
-   */
-  get gananciaTotal(): Decimal {
-    const ganancia = this.dineroRecaudado.minus(this.inversionTotal);
-    return ganancia.greaterThan(0) ? ganancia : new Decimal(0);
-  }
-
-  /**
-   * Indica si ya se recuperó la inversión
-   */
-  get inversionRecuperada(): boolean {
-    return this.dineroRecaudado.greaterThanOrEqualTo(this.inversionTotal);
-  }
-
-  /**
-   * Porcentaje de avance en recaudo
-   */
-  get porcentajeRecaudo(): number {
-    if (this.inversionTotal.isZero()) return 0;
-    return this.dineroRecaudado
-      .dividedBy(this.inversionTotal)
-      .times(100)
-      .toNumber();
-  }
-
-  /**
-   * Máximo de regalos permitidos (8% del lote, redondeado hacia abajo)
-   * Según sección 16.11
-   */
-  get maximoRegalos(): number {
-    return Math.floor(this.cantidadTrabix * 0.08);
-  }
-
-  /**
-   * Valida si el lote puede ser activado
+    /**
+     * Valida si el lote puede ser activado
    */
   validarActivacion(): void {
     if (this.estado !== 'CREADO') {
@@ -105,37 +61,17 @@ export class LoteEntity {
       );
     }
   }
-
-  /**
-   * Valida si el lote puede ser finalizado
-   */
-  validarFinalizacion(): void {
-    if (this.estado !== 'ACTIVO') {
-      throw new DomainException(
-        'LOTE_005',
-        'Solo se pueden finalizar lotes en estado ACTIVO',
-        { estadoActual: this.estado },
-      );
-    }
-  }
-
-  /**
-   * Valida si se puede registrar una venta en este lote
-   */
-  validarParaVenta(): void {
-    if (this.estado !== 'ACTIVO') {
-      throw new DomainException(
-        'LOTE_003',
-        'No se pueden registrar ventas en un lote que no está activo',
-        { estadoActual: this.estado },
-      );
-    }
-  }
 }
 
 /**
  * Props para crear una entidad Lote
  */
+type InversionTotal = Decimal | string | number;
+type InversionAdmin = Decimal | string | number;
+type InversionVendedor = Decimal | string | number;
+type DineroRecaudado = Decimal | string | number;
+type DineroTransferido = Decimal | string | number;
+
 export interface LoteEntityProps {
   id: string;
   vendedorId: string;
@@ -143,25 +79,14 @@ export interface LoteEntityProps {
   cantidadTrabix: number;
   modeloNegocio: ModeloNegocio;
   estado: EstadoLote;
-  inversionTotal: Decimal | string | number;
-  inversionAdmin: Decimal | string | number;
-  inversionVendedor: Decimal | string | number;
-  dineroRecaudado: Decimal | string | number;
-  dineroTransferido: Decimal | string | number;
+    inversionTotal: InversionTotal;
+  inversionAdmin: InversionAdmin;
+  inversionVendedor: InversionVendedor;
+  dineroRecaudado: DineroRecaudado;
+  dineroTransferido: DineroTransferido;
   esLoteForzado: boolean;
   ventaMayorOrigenId: string | null;
   fechaCreacion: Date;
   fechaActivacion: Date | null;
   fechaFinalizacion: Date | null;
-}
-
-/**
- * Props para crear un nuevo lote
- */
-export interface CrearLoteProps {
-  vendedorId: string;
-  cantidadTrabix: number;
-  modeloNegocio: ModeloNegocio;
-  esLoteForzado?: boolean;
-  ventaMayorOrigenId?: string | null;
 }

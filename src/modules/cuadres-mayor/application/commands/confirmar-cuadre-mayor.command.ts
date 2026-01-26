@@ -15,7 +15,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
+} from '../../../lotes/domain/tanda.repository.interface';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CuadreMayorExitosoEvent } from '../events/cuadre-mayor-exitoso.event';
 import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
@@ -137,7 +137,7 @@ export class ConfirmarCuadreMayorHandler
                 }
                 await this.loteRepository.finalizar(loteForzadoId);
 
-                const aporteFondo = FONDO_CONFIG.APORTE_POR_TRABIX.times(loteForzado.cantidadTrabix);
+                const aporteFondo = FONDO_CONFIG.APORTE_POR_TRABIX_DEFAULT.times(loteForzado.cantidadTrabix);
                 await this.commandBus.execute(
                     new RegistrarEntradaFondoCommand(
                         aporteFondo,

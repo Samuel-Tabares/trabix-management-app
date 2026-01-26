@@ -1,5 +1,4 @@
-import { IEvent } from '@nestjs/cqrs';
-import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
+import { IEvent, EventsHandler, IEventHandler} from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { Decimal } from 'decimal.js';
 import {

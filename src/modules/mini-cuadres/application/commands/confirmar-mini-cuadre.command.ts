@@ -11,7 +11,7 @@ import {
 import {
     ITandaRepository,
     TANDA_REPOSITORY,
-} from '../../../lotes-module-corregido/domain/tanda.repository.interface';
+} from '../../../lotes/domain/tanda.repository.interface';
 import { MiniCuadreEntity } from '../../domain/mini-cuadre.entity';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { MiniCuadreExitosoEvent } from '../events/mini-cuadre-exitoso.event';
