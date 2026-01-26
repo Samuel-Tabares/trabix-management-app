@@ -23,10 +23,10 @@ export class ChangePasswordDto {
   @IsNotEmpty({ message: 'La nueva contraseña es requerida' })
   @MinLength(8, { message: 'La nueva contraseña debe tener al menos 8 caracteres' })
   @Matches(
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@.$!%*?&])[A-Za-z\d@.$!%*?&]+$/,
     {
       message:
-        'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un caracter especial (@$!%*?&)',
+        'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un caracter especial (@.$!%*?&)',
     },
   )
   newPassword!: string;

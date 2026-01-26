@@ -65,7 +65,7 @@ export class AuthService {
   private readonly LOCKOUT_LEVELS: LockoutConfig[] = [
     { minAttempts: 5, maxAttempts: 9, durationMinutes: 15, requiresAdmin: false },
     { minAttempts: 10, maxAttempts: 14, durationMinutes: 60, requiresAdmin: false },
-    { minAttempts: 15, maxAttempts: 19, durationMinutes: 1440, requiresAdmin: false }, // 24 horas
+    { minAttempts: 15, maxAttempts: 19, durationMinutes: 1440, requiresAdmin: false },
     { minAttempts: 20, maxAttempts: Infinity, durationMinutes: 0, requiresAdmin: true },
   ];
 
@@ -456,7 +456,7 @@ export class AuthService {
   private generateTemporaryPassword(): string {
     const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Sin I, O para evitar confusión
     const numbers = '23456789'; // Sin 0, 1 para evitar confusión
-    const special = '@$!%*?&';
+    const special = '@.$!%*?&';
 
     let password = '';
 
