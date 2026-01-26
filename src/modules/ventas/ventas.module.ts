@@ -3,13 +3,20 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Domain
 import {
-    VENTA_REPOSITORY,
-    VendedorPuedeVenderSpecification,
+
     RegaloPermitidoSpecification,
-} from './domain';
+} from './domain/regalo-permitido.specification';
+
+import{
+    VendedorPuedeVenderSpecification,
+} from './domain/vendedor-puede-vender.specification'
+
+import{
+    VENTA_REPOSITORY,
+} from './domain/venta.repository.interface'
 
 // Infrastructure
-import { PrismaVentaRepository } from './infrastructure';
+import { PrismaVentaRepository } from './infrastructure/prisma-venta.repository';
 
 // Application - Commands, Queries, Events
 import { VentaCommandHandlers } from './application/commands';
@@ -17,7 +24,7 @@ import { VentaQueryHandlers } from './application/queries';
 import { VentaEventHandlers } from './application/events';
 
 // Controllers
-import { VentasController } from './controllers';
+import { VentasController } from './controllers/ventas.controller';
 
 // Módulos necesarios
 import { UsuariosModule } from '../usuarios/usuarios.module';

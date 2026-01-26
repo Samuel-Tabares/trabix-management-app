@@ -35,9 +35,13 @@ import {
 // Commands
 import {
     RegistrarVentaCommand,
-    AprobarVentaCommand,
+} from '../application/commands/registrar-venta.command';
+import {
     RechazarVentaCommand,
-} from '../application/commands';
+} from '../application/commands/rechazar-venta.command';
+import {
+    AprobarVentaCommand,
+} from '../application/commands/aprobar-venta.command';
 
 // Queries
 import {
