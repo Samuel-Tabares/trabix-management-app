@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   /**
-   * Valida el payload del JWT
+   * Valida el payload del JWT (no se usa aun)
    * Se ejecuta después de que Passport verifica la firma y expiración
    *
    * @param payload - Payload decodificado del JWT
