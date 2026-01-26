@@ -3,12 +3,17 @@ import { CqrsModule } from '@nestjs/cqrs';
 
 // Controllers
 import {
+    DashboardController,
+} from '../admin/controllers/dashboard.controller';
+import {
     StockAdminController,
     PedidosStockController,
+} from '../admin/controllers/stock.controller';
+import {
+
     ConfiguracionesController,
     TiposInsumoController,
-    DashboardController,
-} from '../admin/controllers';
+} from '../admin/controllers/configuraciones.controller';
 
 // Domain
 import {
