@@ -78,6 +78,12 @@ const configuration = () => ({
         triggerCuadreT2_2Tandas: Number(process.env.TRIGGER_CUADRE_T2_2TANDAS),
     },
 
+    lotes: {
+        maxLotesCreadosPorVendedor: Number(process.env.MAX_LOTES_CREADOS_POR_VENDEDOR),
+        inversionMinimaVendedor: Number(process.env.INVERSION_MINIMA_VENDEDOR),
+        umbralTandasTres: Number(process.env.UMBRAL_TANDAS_TRES),
+    },
+
     tiempos: {
         autoTransitoHoras: Number(process.env.TIEMPO_AUTO_TRANSITO_HORAS),
     },

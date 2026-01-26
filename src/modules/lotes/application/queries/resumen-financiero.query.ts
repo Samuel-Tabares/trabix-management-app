@@ -1,13 +1,14 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Decimal } from 'decimal.js';
 import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '../../../lotes/domain/lote.repository.interface';
+} from '../../domain/lote.repository.interface';
 import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
-import { DomainException } from '@domain/exceptions/domain.exception';
-import { ResumenFinancieroDto } from '../../../lotes/application/dto';
+import { DomainException } from '../../../../domain//exceptions/domain.exception';
+import { ResumenFinancieroDto } from '../dto';
 
 /**
  * Query para obtener el resumen financiero de un lote
@@ -24,11 +25,22 @@ export class ResumenFinancieroQuery implements IQuery {
 export class ResumenFinancieroHandler
   implements IQueryHandler<ResumenFinancieroQuery, ResumenFinancieroDto>
 {
+  // Porcentajes de ganancia cargados desde configuración
+  private readonly porcentajeVendedor6040: number;
+  private readonly porcentajeAdmin6040: number;
+  private readonly porcentajeVendedor5050: number;
+
   constructor(
     @Inject(LOTE_REPOSITORY)
     private readonly loteRepository: ILoteRepository,
     private readonly calculadoraInversion: CalculadoraInversionService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    // Cargar porcentajes desde configuración
+    this.porcentajeVendedor6040 = this.configService.get<number>('porcentajes.vendedor6040') ?? 60;
+    this.porcentajeAdmin6040 = this.configService.get<number>('porcentajes.admin6040') ?? 40;
+    this.porcentajeVendedor5050 = this.configService.get<number>('porcentajes.vendedor5050') ?? 50;
+  }
 
   async execute(query: ResumenFinancieroQuery): Promise<ResumenFinancieroDto> {
     const { loteId } = query;
@@ -52,18 +64,21 @@ export class ResumenFinancieroHandler
     const gananciaTotal = dineroRecaudado.minus(inversionTotal);
     const hayGanancia = gananciaTotal.greaterThan(0);
 
-    // Calcular ganancias según modelo de negocio
+    // Calcular ganancias según modelo de negocio (usando configuración)
     let gananciaVendedor = new Decimal(0);
     let gananciaAdmin = new Decimal(0);
 
     if (hayGanancia) {
       if (lote.modeloNegocio === 'MODELO_60_40') {
-        gananciaVendedor = gananciaTotal.times(0.6);
-        gananciaAdmin = gananciaTotal.times(0.4);
+        // Usar porcentajes de configuración
+        gananciaVendedor = gananciaTotal.times(this.porcentajeVendedor6040 / 100);
+        gananciaAdmin = gananciaTotal.times(this.porcentajeAdmin6040 / 100);
       } else {
         // MODELO_50_50 - Para cascada completa se necesita la jerarquía
-        gananciaVendedor = gananciaTotal.times(0.5);
-        gananciaAdmin = gananciaTotal.times(0.5); // Simplificado sin cascada
+        gananciaVendedor = gananciaTotal.times(this.porcentajeVendedor5050 / 100);
+        // En el modelo 50/50, el otro 50% se distribuye en cascada
+        // Por ahora simplificado sin cascada
+        gananciaAdmin = gananciaTotal.times((100 - this.porcentajeVendedor5050) / 100);
       }
     }
 
@@ -84,12 +99,11 @@ export class ResumenFinancieroHandler
       ? 0
       : dineroRecaudado.dividedBy(inversionTotal).times(100).toNumber();
 
-    // Máximo de regalos y regalos utilizados
-
-    // TODO: Calcular regalos utilizados de las ventas
-
+    // Máximo de regalos (usando CalculadoraInversionService)
     const maximoRegalos = this.calculadoraInversion.calcularMaximoRegalos(lote.cantidadTrabix);
-    const regalosUtilizados = 0; // Se calculará cuando tengamos acceso a ventas
+    
+    // TODO: Calcular regalos utilizados de las ventas
+    const regalosUtilizados = 0;
 
     return {
       loteId: lote.id,

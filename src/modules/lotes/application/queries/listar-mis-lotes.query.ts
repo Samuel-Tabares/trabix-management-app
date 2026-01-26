@@ -5,6 +5,7 @@ import {
   ILoteRepository,
   LOTE_REPOSITORY,
 } from '../../domain/lote.repository.interface';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
 import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../dto';
 
 /**
@@ -27,6 +28,7 @@ export class ListarMisLotesHandler
   constructor(
     @Inject(LOTE_REPOSITORY)
     private readonly loteRepository: ILoteRepository,
+    private readonly calculadoraInversion: CalculadoraInversionService,
   ) {}
 
   async execute(query: ListarMisLotesQuery): Promise<LotesPaginadosDto> {
@@ -81,6 +83,8 @@ export class ListarMisLotesHandler
       fechaFinalizada: tanda.fechaFinalizada,
     }));
 
+    const maximoRegalos = this.calculadoraInversion.calcularMaximoRegalos(lote.cantidadTrabix);
+
     return {
       id: lote.id,
       vendedorId: lote.vendedorId,
@@ -100,7 +104,7 @@ export class ListarMisLotesHandler
       esLoteForzado: lote.esLoteForzado,
       ventaMayorOrigenId: lote.ventaMayorOrigenId,
       numeroTandas: lote.tandas.length,
-      maximoRegalos: Math.floor(lote.cantidadTrabix * 0.08),
+      maximoRegalos,
       tandas,
       fechaCreacion: lote.fechaCreacion,
       fechaActivacion: lote.fechaActivacion,

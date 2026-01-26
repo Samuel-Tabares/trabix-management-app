@@ -1,5 +1,6 @@
 import { QueryHandler, IQueryHandler, IQuery } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ILoteRepository,
   LOTE_REPOSITORY,
@@ -30,11 +31,19 @@ export class ObtenerInfoSolicitudQuery implements IQuery {
 export class ObtenerInfoSolicitudHandler
   implements IQueryHandler<ObtenerInfoSolicitudQuery, InfoSolicitudLoteDto>
 {
+  private readonly maxLotesCreados: number;
+  private readonly inversionMinimaVendedor: number;
+
   constructor(
     @Inject(LOTE_REPOSITORY)
     private readonly loteRepository: ILoteRepository,
     private readonly calculadoraInversion: CalculadoraInversionService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    // Cargar configuración desde .env
+    this.maxLotesCreados = this.configService.get<number>('lotes.maxLotesCreadosPorVendedor') ?? 2;
+    this.inversionMinimaVendedor = this.configService.get<number>('lotes.inversionMinimaVendedor') ?? 20000;
+  }
 
   async execute(query: ObtenerInfoSolicitudQuery): Promise<InfoSolicitudLoteDto> {
     const { vendedorId } = query;
@@ -45,6 +54,11 @@ export class ObtenerInfoSolicitudHandler
       estado: 'CREADO',
     });
 
-    return calcularInfoSolicitud(this.calculadoraInversion, lotesCreadosActuales);
+    return calcularInfoSolicitud(
+      this.calculadoraInversion,
+      lotesCreadosActuales,
+      this.maxLotesCreados,
+      this.inversionMinimaVendedor,
+    );
   }
 }

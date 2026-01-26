@@ -4,9 +4,10 @@ import { Decimal } from 'decimal.js';
 import {
     ILoteRepository,
     LOTE_REPOSITORY,
-} from '../../../lotes/domain/lote.repository.interface';
+} from '../../domain/lote.repository.interface';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
 import { DomainException } from '@domain/exceptions/domain.exception';
-import { LoteResponseDto, TandaResponseDto } from '../../../lotes/application/dto';
+import { LoteResponseDto, TandaResponseDto } from '../dto';
 
 /**
  * Query para obtener un lote por ID
@@ -25,6 +26,7 @@ export class ObtenerLoteHandler
   constructor(
     @Inject(LOTE_REPOSITORY)
     private readonly loteRepository: ILoteRepository,
+    private readonly calculadoraInversion: CalculadoraInversionService,
   ) {}
 
   async execute(query: ObtenerLoteQuery): Promise<LoteResponseDto> {
@@ -64,6 +66,9 @@ export class ObtenerLoteHandler
       fechaFinalizada: tanda.fechaFinalizada,
     }));
 
+    // Usar CalculadoraInversionService para obtener el máximo de regalos
+    const maximoRegalos = this.calculadoraInversion.calcularMaximoRegalos(lote.cantidadTrabix);
+
     return {
       id: lote.id,
       vendedorId: lote.vendedorId,
@@ -83,7 +88,7 @@ export class ObtenerLoteHandler
       esLoteForzado: lote.esLoteForzado,
       ventaMayorOrigenId: lote.ventaMayorOrigenId,
       numeroTandas: lote.tandas.length,
-      maximoRegalos: Math.floor(lote.cantidadTrabix * 0.08),
+      maximoRegalos,
       tandas,
       fechaCreacion: lote.fechaCreacion,
       fechaActivacion: lote.fechaActivacion,
