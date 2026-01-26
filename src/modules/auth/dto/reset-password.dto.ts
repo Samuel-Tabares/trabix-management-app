@@ -1,19 +1,4 @@
-import { IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
-/**
- * DTO para que el admin resetee la contraseña de un usuario
- * Genera una contraseña temporal que el usuario deberá cambiar
- */
-export class ResetPasswordDto {
-  @ApiProperty({
-    description: 'ID del usuario al que se le reseteará la contraseña',
-    example: 'uuid-v4-string',
-  })
-  @IsUUID('4', { message: 'El ID del usuario debe ser un UUID válido' })
-  usuarioId!: string;
-}
-
 /**
  * DTO de respuesta al resetear contraseña
  */

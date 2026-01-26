@@ -194,10 +194,7 @@ export class AuthService {
       });
 
       // Agregar access token a blacklist
-      const decodedAccess = this.jwtService.decode(accessToken) as {
-        jti?: string;
-        exp?: number;
-      } | null;
+      const decodedAccess = this.jwtService.decode(accessToken);
       if (decodedAccess?.jti && decodedAccess?.exp) {
         await this.tokenBlacklistService.addToBlacklist(
           decodedAccess.jti,
@@ -207,10 +204,7 @@ export class AuthService {
 
       // Agregar refresh token a blacklist si está presente
       if (refreshToken) {
-        const decodedRefresh = this.jwtService.decode(refreshToken) as {
-          tokenId?: string;
-          exp?: number;
-        } | null;
+        const decodedRefresh = this.jwtService.decode(refreshToken);
         if (decodedRefresh?.tokenId && decodedRefresh?.exp) {
           await this.tokenBlacklistService.addToBlacklist(
             decodedRefresh.tokenId,

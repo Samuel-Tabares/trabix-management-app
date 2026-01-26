@@ -7,7 +7,8 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthService } from './services/auth.service';
 import { TokenBlacklistService } from './services/token-blacklist.service';
-import { JwtAuthGuard, RolesGuard } from './guards';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import {  RolesGuard } from './guards/roles.guard';
 
 /**
  * Módulo de autenticación

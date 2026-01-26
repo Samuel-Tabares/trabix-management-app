@@ -39,18 +39,8 @@ export class TokenBlacklistService {
     const key = this.getKey(tokenId);
       return await this.redis.exists(key);
   }
-
-  /**
-   * Remueve un token de la blacklist (para testing)
-   * @param tokenId - ID único del token (jti claim)
-   */
-  async removeFromBlacklist(tokenId: string): Promise<void> {
-    const key = this.getKey(tokenId);
-    await this.redis.del(key);
-  }
-
-  /**
-   * Genera la clave de Redis para un token
+    /**
+     * Genera la clave de Redis para un token
    */
   private getKey(tokenId: string): string {
     return `${this.PREFIX}${tokenId}`;
