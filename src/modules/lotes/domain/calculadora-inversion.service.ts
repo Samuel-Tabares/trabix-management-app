@@ -18,7 +18,7 @@ export class CalculadoraInversionService {
   private readonly COSTO_PERCIBIDO = new Decimal(2400);
   
   // Porcentaje de inversión (50% cada uno)
-  private readonly PORCENTAJE_INVERSION = new Decimal(0.5);
+  private readonly PORCENTAJE_INVERSION_VENDEDOR = new Decimal(0.5);
 
   /**
    * Calcula la inversión total de un lote
@@ -31,14 +31,14 @@ export class CalculadoraInversionService {
    * Calcula la inversión del admin (50%)
    */
   calcularInversionAdmin(inversionTotal: Decimal): Decimal {
-    return inversionTotal.times(this.PORCENTAJE_INVERSION);
+    return inversionTotal.times(this.PORCENTAJE_INVERSION_VENDEDOR);
   }
 
   /**
    * Calcula la inversión del vendedor (50%)
    */
   calcularInversionVendedor(inversionTotal: Decimal): Decimal {
-    return inversionTotal.times(this.PORCENTAJE_INVERSION);
+    return inversionTotal.times(this.PORCENTAJE_INVERSION_VENDEDOR);
   }
 
   /**

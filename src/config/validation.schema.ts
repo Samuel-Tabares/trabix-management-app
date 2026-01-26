@@ -125,10 +125,10 @@ export const validationSchema = Joi.object({
     // ======================
     // Porcentajes
     // ======================
-    PORCENTAJE_VENDEDOR_60_40: Joi.number().min(0).max(100).default(60),
-    PORCENTAJE_ADMIN_60_40: Joi.number().min(0).max(100).default(40),
-    PORCENTAJE_VENDEDOR_50_50: Joi.number().min(0).max(100).default(50),
-    PORCENTAJE_INVERSION: Joi.number().min(0).max(100).default(50),
+    PORCENTAJE_GANANCIA_VENDEDOR_60_40: Joi.number().min(0).max(100).default(60),
+    PORCENTAJE_GANANCIA_ADMIN_60_40: Joi.number().min(0).max(100).default(40),
+    PORCENTAJE_GANANCIA_VENDEDOR_50_50: Joi.number().min(0).max(100).default(50),
+    PORCENTAJE_INVERSION_VENDEDOR: Joi.number().min(0).max(100).default(50),
 
     LIMITE_REGALOS: Joi.number().integer().min(0).max(100).default(8),
 

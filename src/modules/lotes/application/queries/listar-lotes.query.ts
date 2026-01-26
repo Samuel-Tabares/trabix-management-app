@@ -6,6 +6,7 @@ import {
     LOTE_REPOSITORY,
 } from '../../../lotes/domain/lote.repository.interface';
 import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../../../lotes/application/dto';
+import {ConfigService} from "@nestjs/config";
 
 /**
  * Query para listar lotes con filtros y paginación
@@ -24,6 +25,7 @@ export class ListarLotesHandler
   constructor(
     @Inject(LOTE_REPOSITORY)
     private readonly loteRepository: ILoteRepository,
+    private readonly configService: ConfigService
   ) {}
 
   async execute(query: ListarLotesQuery): Promise<LotesPaginadosDto> {
@@ -56,6 +58,8 @@ export class ListarLotesHandler
       nextCursor: resultado.nextCursor,
     };
   }
+  //definimos variable de limite de regalos desde configservice
+limitederegalos = this.configService.get<number>('porcentajes.limiteRegalos') ?? 8
 
   private mapToDto(lote: any): LoteResponseDto {
     const inversionTotal = new Decimal(lote.inversionTotal);
@@ -98,7 +102,7 @@ export class ListarLotesHandler
       esLoteForzado: lote.esLoteForzado,
       ventaMayorOrigenId: lote.ventaMayorOrigenId,
       numeroTandas: lote.tandas.length,
-      maximoRegalos: Math.floor(lote.cantidadTrabix * 0.08),
+      maximoRegalos: Math.floor(lote.cantidadTrabix * this.limitederegalos),
       tandas,
       fechaCreacion: lote.fechaCreacion,
       fechaActivacion: lote.fechaActivacion,

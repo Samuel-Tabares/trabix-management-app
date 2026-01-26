@@ -50,10 +50,10 @@ const configuration = () => ({
     },
 
     porcentajes: {
-        vendedor6040: Number(process.env.PORCENTAJE_VENDEDOR_60_40),
-        admin6040: Number(process.env.PORCENTAJE_ADMIN_60_40),
-        vendedor5050: Number(process.env.PORCENTAJE_VENDEDOR_50_50),
-        inversion: Number(process.env.PORCENTAJE_INVERSION),
+        vendedor6040: Number(process.env.PORCENTAJE_GANANCIA_VENDEDOR_60_40),
+        admin6040: Number(process.env.PORCENTAJE_GANANCIA_ADMIN_60_40),
+        vendedor5050: Number(process.env.PORCENTAJE_GANANCIA_VENDEDOR_50_50),
+        inversion: Number(process.env.PORCENTAJE_INVERSION_VENDEDOR),
         limiteRegalos: Number(process.env.LIMITE_REGALOS),
         triggerCuadreT2: Number(process.env.TRIGGER_CUADRE_T2),
         triggerCuadreT3: Number(process.env.TRIGGER_CUADRE_T3),

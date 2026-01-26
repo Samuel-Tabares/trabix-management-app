@@ -101,11 +101,10 @@ async function main() {
         // === PORCENTAJES ===
         { clave: 'APORTE_FONDO', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX', categoria: 'PORCENTAJES' },
         { clave: 'APORTE_FONDO_POR_TRABIX', valor: '200', tipo: 'DECIMAL', descripcion: 'Aporte al fondo por TRABIX (alias)', categoria: 'PORCENTAJES' },
-        { clave: 'PORCENTAJE_VENDEDOR_60_40', valor: '60', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 60/40', categoria: 'PORCENTAJES' },
-        { clave: 'PORCENTAJE_ADMIN_60_40', valor: '40', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia admin 60/40', categoria: 'PORCENTAJES' },
-        { clave: 'PORCENTAJE_VENDEDOR_50_50', valor: '50', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 50/50', categoria: 'PORCENTAJES' },
+        { clave: 'PORCENTAJE_GANANCIA_VENDEDOR_60_40', valor: '60', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 60/40', categoria: 'PORCENTAJES' },
+        { clave: 'PORCENTAJE_GANANCIA_ADMIN_60_40', valor: '40', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia admin 60/40', categoria: 'PORCENTAJES' },
+        { clave: 'PORCENTAJE_GANANCIA_VENDEDOR_50_50', valor: '50', tipo: 'PERCENT', descripcion: 'Porcentaje ganancia vendedor 50/50', categoria: 'PORCENTAJES' },
         { clave: 'PORCENTAJE_INVERSION_VENDEDOR', valor: '50', tipo: 'PERCENT', descripcion: 'Porcentaje inversión vendedor', categoria: 'PORCENTAJES' },
-        { clave: 'PORCENTAJE_INVERSION_ADMIN', valor: '50', tipo: 'PERCENT', descripcion: 'Porcentaje inversión admin', categoria: 'PORCENTAJES' },
         { clave: 'LIMITE_REGALOS', valor: '8', tipo: 'PERCENT', descripcion: 'Límite de regalos', categoria: 'PORCENTAJES' },
         { clave: 'TRIGGER_CUADRE_T2', valor: '10', tipo: 'PERCENT', descripcion: 'Trigger cuadre T2 (3 tandas)', categoria: 'PORCENTAJES' },
         { clave: 'TRIGGER_CUADRE_T3', valor: '20', tipo: 'PERCENT', descripcion: 'Trigger cuadre T3 (3 tandas)', categoria: 'PORCENTAJES' },
@@ -134,7 +133,7 @@ async function main() {
 
     // Cargar configuraciones en memoria
     const cfgs = await prisma.configuracionSistema.findMany();
-    for (const cfg of cfgs) CONFIG[cfg.clave] = parseFloat(cfg.valor);
+    for (const cfg of cfgs) CONFIG[cfg.clave] = Number.parseFloat(cfg.valor);
 
     // Asignar a variables globales
     COSTO_INV = CONFIG['COSTO_INVERSION_TRABIX'];
@@ -689,7 +688,7 @@ async function main() {
                 dineroRecaudado: decimal(0),
                 dineroTransferido: decimal(0),
                 fechaCreacion: daysAgo(opt.dias || 30),
-                fechaActivacion: estado !== EstadoLote.CREADO ? daysAgo((opt.dias || 30) - 2) : null,
+                fechaActivacion: estado === EstadoLote.CREADO ? null : daysAgo((opt.dias || 30) - 2),
             },
         });
 
@@ -914,7 +913,7 @@ async function main() {
                 montoTotal: decimal(total),
                 estado,
                 fechaRegistro: daysAgo(estado === 'PENDIENTE' ? 1 : 5),
-                fechaValidacion: estado !== 'PENDIENTE' ? daysAgo(4) : null,
+                fechaValidacion: estado === 'PENDIENTE' ? null : daysAgo(4),
             },
         });
         for (const d of det) {
