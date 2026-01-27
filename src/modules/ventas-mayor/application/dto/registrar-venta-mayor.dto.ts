@@ -14,11 +14,11 @@ import { ModalidadVentaMayor } from '@prisma/client';
 export class RegistrarVentaMayorDto {
   @ApiProperty({
     description: 'Cantidad de unidades (debe ser mayor a 20)',
-    example: 50,
-    minimum: 21,
+    example: 49,
+    minimum: 20,
   })
   @IsInt({ message: 'La cantidad debe ser un número entero' })
-  @Min(21, { message: 'La cantidad para venta al mayor debe ser mayor a 20' })
+  @Min(20, { message: 'La cantidad para venta al mayor debe ser mayor o igual a 20' })
   cantidadUnidades!: number;
 
   @ApiProperty({

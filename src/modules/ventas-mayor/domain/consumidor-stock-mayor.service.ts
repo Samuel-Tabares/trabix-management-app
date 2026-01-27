@@ -234,13 +234,4 @@ export class ConsumidorStockMayorService {
 
         return restante;
     }
-
-    /**
-   * Calcula la cantidad exacta de TRABIX para el lote forzado
-   * Según sección 7.4: exacta cantidad según excedente necesario
-   */
-  calcularCantidadLoteForzado(cantidadFaltante: number): number {
-    // El lote forzado tiene exactamente la cantidad faltante
-    return cantidadFaltante;
-  }
 }
