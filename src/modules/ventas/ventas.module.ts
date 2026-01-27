@@ -2,18 +2,10 @@ import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 
 // Domain
-import {
-
-    RegaloPermitidoSpecification,
-} from './domain/regalo-permitido.specification';
-
-import{
-    VendedorPuedeVenderSpecification,
-} from './domain/vendedor-puede-vender.specification'
-
-import{
-    VENTA_REPOSITORY,
-} from './domain/venta.repository.interface'
+import { RegaloPermitidoSpecification } from './domain/regalo-permitido.specification';
+import { VendedorPuedeVenderSpecification } from './domain/vendedor-puede-vender.specification';
+import { CalculadoraPreciosVentaService } from './domain/calculadora-precios-venta.service';
+import { VENTA_REPOSITORY } from './domain/venta.repository.interface';
 
 // Infrastructure
 import { PrismaVentaRepository } from './infrastructure/prisma-venta.repository';
@@ -35,13 +27,13 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 /**
  * Módulo de Ventas
  * Según sección 6 del documento
- * 
+ *
  * Responsabilidades:
  * - Registro de ventas al detal
  * - Aprobación/Rechazo de ventas
  * - Gestión de stock
  * - Validación de regalos
- * 
+ *
  * Flujo de venta:
  * 1. Vendedor registra venta colectiva (PENDIENTE)
  * 2. Stock se reduce temporalmente
@@ -50,36 +42,40 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
  *    - Si RECHAZA: stock se revierte, venta se elimina
  */
 @Module({
-  imports: [
-    CqrsModule,
-    UsuariosModule,
-    LotesModule,
-    forwardRef(() => CuadresModule),
-    forwardRef(() => NotificacionesModule),
-  ],
-  controllers: [VentasController],
-  providers: [
-    // Repository
-    {
-      provide: VENTA_REPOSITORY,
-      useClass: PrismaVentaRepository,
-    },
-    
-    // Specifications
-    VendedorPuedeVenderSpecification,
-    RegaloPermitidoSpecification,
-    
-    // Command Handlers
-    ...VentaCommandHandlers,
-    
-    // Query Handlers
-    ...VentaQueryHandlers,
-    
-    // Event Handlers
-    ...VentaEventHandlers,
-  ],
-  exports: [
-    VENTA_REPOSITORY,
-  ],
+    imports: [
+        CqrsModule,
+        UsuariosModule,
+        LotesModule, // Necesario para CalculadoraInversionService (usado en RegaloPermitidoSpecification)
+        forwardRef(() => CuadresModule),
+        forwardRef(() => NotificacionesModule),
+    ],
+    controllers: [VentasController],
+    providers: [
+        // Repository
+        {
+            provide: VENTA_REPOSITORY,
+            useClass: PrismaVentaRepository,
+        },
+
+        // Domain Services
+        CalculadoraPreciosVentaService,
+
+        // Specifications
+        VendedorPuedeVenderSpecification,
+        RegaloPermitidoSpecification,
+
+        // Command Handlers
+        ...VentaCommandHandlers,
+
+        // Query Handlers
+        ...VentaQueryHandlers,
+
+        // Event Handlers
+        ...VentaEventHandlers,
+    ],
+    exports: [
+        VENTA_REPOSITORY,
+        CalculadoraPreciosVentaService,
+    ],
 })
 export class VentasModule {}

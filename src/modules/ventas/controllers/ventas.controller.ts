@@ -27,10 +27,14 @@ import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-us
 // DTOs
 import {
     CreateVentaDto,
+} from '../application/dto/create-venta.dto';
+import {
     QueryVentasDto,
+} from '../application/dto/query-ventas.dto';
+import {
     VentaResponseDto,
     VentasPaginadasDto,
-} from '../application/dto';
+} from '../application/dto/venta-response.dto';
 
 // Commands
 import {

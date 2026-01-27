@@ -4,16 +4,15 @@ import {
     IVentaRepository,
     VENTA_REPOSITORY,
 } from '../../domain/venta.repository.interface';
-import { TRABIX_POR_TIPO } from '../../domain/venta.entity';
+import { TRABIX_POR_TIPO } from '../../domain/calculadora-precios-venta.service';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
-import { VentaResponseDto, DetalleVentaResponseDto } from '../dto';
+import { VentaResponseDto, DetalleVentaResponseDto } from '../dto/venta-response.dto';
 
 /**
  * Query para obtener una venta por ID
  */
 export class ObtenerVentaQuery implements IQuery {
-    constructor(public readonly ventaId: string) {
-    }
+    constructor(public readonly ventaId: string) {}
 }
 
 /**
@@ -21,22 +20,22 @@ export class ObtenerVentaQuery implements IQuery {
  */
 @QueryHandler(ObtenerVentaQuery)
 export class ObtenerVentaHandler
-    implements IQueryHandler<ObtenerVentaQuery, VentaResponseDto> {
+    implements IQueryHandler<ObtenerVentaQuery, VentaResponseDto>
+{
     constructor(
         @Inject(VENTA_REPOSITORY)
         private readonly ventaRepository: IVentaRepository,
-    ) {
-    }
+    ) {}
 
     async execute(query: ObtenerVentaQuery): Promise<VentaResponseDto> {
-        const {ventaId} = query;
+        const { ventaId } = query;
 
         const venta = await this.ventaRepository.findById(ventaId);
         if (!venta) {
             throw new DomainException(
                 'VNT_003',
                 'Venta no encontrada',
-                {ventaId},
+                { ventaId },
             );
         }
 
@@ -55,7 +54,7 @@ export class ObtenerVentaHandler
         }));
 
         const cantidadRegalos = detalles
-            .filter(d => d.tipo === 'REGALO')
+            .filter((d) => d.tipo === 'REGALO')
             .reduce((sum, d) => sum + d.cantidad, 0);
 
         return {
