@@ -16,26 +16,26 @@ import {
     ITandaRepository,
     TANDA_REPOSITORY,
 } from '../../../lotes/domain/tanda.repository.interface';
+import { CalculadoraInversionService } from '../../../lotes/domain/calculadora-inversion.service';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 import { CuadreMayorExitosoEvent } from '../events/cuadre-mayor-exitoso.event';
 import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
 import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
-import { FONDO_CONFIG } from '../../../fondo-recompensas/domain';
 
 /**
  * Command para confirmar un cuadre al mayor
  */
 export class ConfirmarCuadreMayorCommand implements ICommand {
-  constructor(
-    public readonly cuadreMayorId: string,
-    public readonly adminId: string,
-  ) {}
+    constructor(
+        public readonly cuadreMayorId: string,
+        public readonly adminId: string,
+    ) {}
 }
 
 /**
  * Handler del comando ConfirmarCuadreMayor
  * Según sección 8.10 del documento
- * 
+ *
  * Pasos:
  * 1. Validar que el cuadre está PENDIENTE
  * 2. Consumir stock de las tandas afectadas
@@ -46,22 +46,23 @@ export class ConfirmarCuadreMayorCommand implements ICommand {
  */
 @CommandHandler(ConfirmarCuadreMayorCommand)
 export class ConfirmarCuadreMayorHandler
-  implements ICommandHandler<ConfirmarCuadreMayorCommand>
+    implements ICommandHandler<ConfirmarCuadreMayorCommand>
 {
-  private readonly logger = new Logger(ConfirmarCuadreMayorHandler.name);
+    private readonly logger = new Logger(ConfirmarCuadreMayorHandler.name);
 
-  constructor(
-    @Inject(CUADRE_MAYOR_REPOSITORY)
-    private readonly cuadreMayorRepository: ICuadreMayorRepository,
-    @Inject(CUADRE_REPOSITORY)
-    private readonly cuadreRepository: ICuadreRepository,
-    @Inject(LOTE_REPOSITORY)
-    private readonly loteRepository: ILoteRepository,
-    @Inject(TANDA_REPOSITORY)
-    private readonly tandaRepository: ITandaRepository,
-    private readonly eventBus: EventBus,
-    private readonly commandBus: CommandBus,
-  ) {}
+    constructor(
+        @Inject(CUADRE_MAYOR_REPOSITORY)
+        private readonly cuadreMayorRepository: ICuadreMayorRepository,
+        @Inject(CUADRE_REPOSITORY)
+        private readonly cuadreRepository: ICuadreRepository,
+        @Inject(LOTE_REPOSITORY)
+        private readonly loteRepository: ILoteRepository,
+        @Inject(TANDA_REPOSITORY)
+        private readonly tandaRepository: ITandaRepository,
+        private readonly calculadoraInversion: CalculadoraInversionService,
+        private readonly eventBus: EventBus,
+        private readonly commandBus: CommandBus,
+    ) {}
 
     async execute(command: ConfirmarCuadreMayorCommand): Promise<any> {
         const { cuadreMayorId } = command;
@@ -137,7 +138,8 @@ export class ConfirmarCuadreMayorHandler
                 }
                 await this.loteRepository.finalizar(loteForzadoId);
 
-                const aporteFondo = FONDO_CONFIG.APORTE_POR_TRABIX_DEFAULT.times(loteForzado.cantidadTrabix);
+                // Usar CalculadoraInversionService para calcular el aporte al fondo
+                const aporteFondo = this.calculadoraInversion.calcularAporteFondo(loteForzado.cantidadTrabix);
                 await this.commandBus.execute(
                     new RegistrarEntradaFondoCommand(
                         aporteFondo,
@@ -177,5 +179,4 @@ export class ConfirmarCuadreMayorHandler
 
         return cuadreConfirmado;
     }
-
 }

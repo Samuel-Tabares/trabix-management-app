@@ -49,7 +49,7 @@ import {
  * - GET /transacciones   - Listar transacciones (todos autenticados)
  * - POST /salida         - Registrar salida/premio (solo admin)
  * 
- * El fondo se alimenta automáticamente al activar lotes ($200 × TRABIX).
+ * El fondo se alimenta automáticamente al activar lotes.
  * Las salidas son premios/bonos que el admin otorga a vendedores destacados.
  */
 @ApiTags('Fondo Recompensas')

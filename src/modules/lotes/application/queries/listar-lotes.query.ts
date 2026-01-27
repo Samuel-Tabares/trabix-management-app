@@ -5,7 +5,7 @@ import {
     ILoteRepository,
     LOTE_REPOSITORY,
 } from '../../domain/lote.repository.interface';
-import { CalculadoraInversionService } from '../../../lotes-fix/lotes/domain/calculadora-inversion.service';
+import { CalculadoraInversionService } from '../../domain/calculadora-inversion.service';
 import { QueryLotesDto, LotesPaginadosDto, LoteResponseDto, TandaResponseDto } from '../dto';
 
 /**

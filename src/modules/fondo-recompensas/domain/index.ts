@@ -5,13 +5,7 @@ import { DomainException } from '../../../domain/exceptions/domain.exception';
 /**
  * Configuración del fondo de recompensas
  * Según sección 12 del documento
- * 
- * NOTA: El aporte por TRABIX se lee desde ConfigService en CalculadoraInversionService
  */
-export const FONDO_CONFIG = {
-  // Valor por defecto si no está configurado
-  APORTE_POR_TRABIX_DEFAULT: new Decimal(200),
-};
 
 /**
  * Tipo de movimiento del fondo
