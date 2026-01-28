@@ -48,7 +48,7 @@ export class CalculadoraTandasService {
      * Calcula distribución para 2 tandas (≤umbral TRABIX)
      */
     private calcularDosTandas(cantidadTrabix: number): DistribucionTandas[] {
-        const tanda1 = Math.round(cantidadTrabix * 0.5);
+        const tanda1 = Math.round(cantidadTrabix * 0.49);
         const tanda2 = cantidadTrabix - tanda1;
 
         return [
@@ -100,10 +100,10 @@ export class CalculadoraTandasService {
                 case 1:
                     // Cuadre T1: dinero_recaudado >= inversion_admin
                 {
-                    const disparaPorDinero = dineroRecaudado.greaterThanOrEqualTo(inversionAdmin);
+                    const disparaT1 = dineroRecaudado.greaterThanOrEqualTo(inversionAdmin);
                     return {
-                        debeDisparar: disparaPorDinero,
-                        razon: disparaPorDinero ? 'INVERSION_RECUPERADA' : null,
+                        debeDisparar: disparaT1,
+                        razon: disparaT1 ? 'INVERSION_RECUPERADA' : null,
                         porcentajeStock,
                     };
                 }
@@ -140,11 +140,11 @@ export class CalculadoraTandasService {
                 case 1:
                     // Cuadre T1: stock_actual <= stock_inicial × trigger_t1_2tandas%
                 {
-                    const umbralT1 = stockInicial * (this.triggerCuadreT1_2Tandas / 100);
-                    const disparaT1 = stockActual <= umbralT1;
+                    const umbralT1_2Tandas = stockInicial * (this.triggerCuadreT1_2Tandas / 100);
+                    const disparaT1_2Tandas = stockActual <= umbralT1_2Tandas;
                     return {
-                        debeDisparar: disparaT1,
-                        razon: disparaT1 ? 'STOCK_BAJO_PORCENTAJE' : null,
+                        debeDisparar: disparaT1_2Tandas,
+                        razon: disparaT1_2Tandas ? 'STOCK_BAJO_PORCENTAJE' : null,
                         porcentajeStock,
                         umbralPorcentaje: this.triggerCuadreT1_2Tandas,
                     };
@@ -152,11 +152,11 @@ export class CalculadoraTandasService {
                 case 2:
                     // Cuadre T2: stock_actual <= stock_inicial × trigger_t2_2tandas%
                 {
-                    const umbralT2 = stockInicial * (this.triggerCuadreT2_2Tandas / 100);
-                    const disparaT2 = stockActual <= umbralT2;
+                    const umbralT2_2Tandas = stockInicial * (this.triggerCuadreT2_2Tandas / 100);
+                    const disparaT2_2Tandas = stockActual <= umbralT2_2Tandas;
                     return {
-                        debeDisparar: disparaT2,
-                        razon: disparaT2 ? 'STOCK_BAJO_PORCENTAJE' : null,
+                        debeDisparar: disparaT2_2Tandas,
+                        razon: disparaT2_2Tandas ? 'STOCK_BAJO_PORCENTAJE' : null,
                         porcentajeStock,
                         umbralPorcentaje: this.triggerCuadreT2_2Tandas,
                     };
