@@ -16,19 +16,24 @@ import {
     IMiniCuadreRepository,
     MINI_CUADRE_REPOSITORY,
 } from '../../../mini-cuadres/domain/mini-cuadre.repository.interface';
+import { CalculadoraMontoEsperadoService } from '../../../cuadres/domain/calculadora-monto-esperado.service';
 import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
 import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento LoteActivado
  * Según sección 23 del documento
- * 
+ *
  * Acciones:
  * 1. Liberar Tanda 1 ✓ (ya se hace en el repositorio al activar)
- * 2. Crear cuadres para cada tanda
+ * 2. Crear cuadres para cada tanda (incluyendo deudas de equipamiento)
  * 3. Crear mini-cuadre para última tanda
  * 4. Registrar entrada en fondo de recompensas
  * 5. Enviar notificación al vendedor
+ *
+ * INTEGRACIÓN EQUIPAMIENTO:
+ * - El monto esperado del cuadre T1 incluye deudas de equipamiento
+ * - Deudas incluyen: mensualidades pendientes, daños, pérdida
  */
 @EventsHandler(LoteActivadoEvent)
 export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
@@ -36,6 +41,7 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
 
     constructor(
         private readonly calculadoraInversion: CalculadoraInversionService,
+        private readonly calculadoraMontoEsperado: CalculadoraMontoEsperadoService,
         @Inject(CUADRE_REPOSITORY)
         private readonly cuadreRepository: ICuadreRepository,
         @Inject(LOTE_REPOSITORY)
@@ -43,8 +49,7 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
         @Inject(MINI_CUADRE_REPOSITORY)
         private readonly miniCuadreRepository: IMiniCuadreRepository,
         private readonly commandBus: CommandBus,
-    ) {
-    }
+    ) {}
 
     async handle(event: LoteActivadoEvent): Promise<void> {
         this.logger.log(
@@ -74,25 +79,41 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
 
             for (const tanda of lote.tandas) {
                 const concepto = this.determinarConceptoCuadre(tanda.numero, numeroTandas);
-                const montoEsperado = this.calcularMontoEsperadoInicial(
-                    numeroTandas,
+
+                // Usar el nuevo calculador que incluye deudas de equipamiento
+                const resultado = await this.calculadoraMontoEsperado.calcularMontoEsperadoInicial({
+                    vendedorId: event.vendedorId,
+                    numeroTanda: tanda.numero,
+                    totalTandas: numeroTandas,
                     inversionAdmin,
-                );
+                    concepto,
+                });
 
                 await this.cuadreRepository.create({
                     tandaId: tanda.id,
                     concepto,
-                    montoEsperado,
+                    montoEsperado: resultado.montoTotal,
                 });
 
+                // Log detallado si hay deuda de equipamiento
+                if (resultado.deudaEquipamiento && resultado.deudaEquipamiento.total.greaterThan(0)) {
+                    this.logger.log(
+                        `Cuadre T${tanda.numero} incluye deuda equipamiento: ` +
+                        `$${resultado.deudaEquipamiento.total.toFixed(2)} ` +
+                        `(daño: $${resultado.deudaEquipamiento.deudaDano.toFixed(2)}, ` +
+                        `pérdida: $${resultado.deudaEquipamiento.deudaPerdida.toFixed(2)}, ` +
+                        `mensualidades: ${resultado.deudaEquipamiento.mensualidadesPendientes} = $${resultado.deudaEquipamiento.montoMensualidades.toFixed(2)})`,
+                    );
+                }
+
                 this.logger.log(
-                    `Cuadre creado para tanda ${tanda.numero}: concepto=${concepto}, monto=$${montoEsperado.toFixed(2)}`,
+                    `Cuadre creado para tanda ${tanda.numero}: concepto=${concepto}, monto=$${resultado.montoTotal.toFixed(2)}`,
                 );
             }
 
             // Crear mini-cuadre para última tanda
             const ultimaTanda = lote.tandas.reduce((prev, curr) =>
-                prev.numero > curr.numero ? prev : curr
+                prev.numero > curr.numero ? prev : curr,
             );
 
             await this.miniCuadreRepository.create({
@@ -105,7 +126,6 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
             );
 
             // Registrar entrada en fondo de recompensas (sección 12)
-            // Se alimenta automáticamente al activar lote: $200 por TRABIX
             await this.commandBus.execute(
                 new RegistrarEntradaFondoCommand(
                     aporteFondo,
@@ -119,16 +139,12 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
 
             // Enviar notificación al vendedor
             await this.commandBus.execute(
-                new EnviarNotificacionCommand(
-                    event.vendedorId,
-                    'TANDA_LIBERADA',
-                    {
-                        loteId: event.loteId,
-                        cantidadTrabix: event.cantidadTrabix,
-                        numeroTanda: 1,
-                        cantidad: lote.tandas.find((t) => t.numero === 1)?.stockInicial || 0,
-                    },
-                ),
+                new EnviarNotificacionCommand(event.vendedorId, 'TANDA_LIBERADA', {
+                    loteId: event.loteId,
+                    cantidadTrabix: event.cantidadTrabix,
+                    numeroTanda: 1,
+                    cantidad: lote.tandas.find((t) => t.numero === 1)?.stockInicial || 0,
+                }),
             );
 
             this.logger.log(`LoteActivadoEvent procesado exitosamente: ${event.loteId}`);
@@ -137,7 +153,6 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
                 `Error procesando LoteActivadoEvent: ${event.loteId}`,
                 error,
             );
-            // Los eventos deben ser idempotentes y se reintentan
             throw error;
         }
     }
@@ -157,27 +172,5 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
             // Lote 2 tandas: T1=MIXTO, T2=GANANCIAS
             return numeroTanda === 1 ? 'MIXTO' : 'GANANCIAS';
         }
-    }
-
-    /**
-     * Calcula el monto esperado inicial del cuadre
-     * Según sección 16.7 del documento
-     *
-     * Para T1: inversión_admin (o MIXTO si son 2 tandas)
-     * Para T2/T3: ganancias (se actualizará conforme ventas)
-     */
-    private calcularMontoEsperadoInicial(
-        numeroTanda: number,
-        inversionAdmin: Decimal,
-    ): Decimal {
-        // Tanda 1: monto esperado = inversión_admin
-        if (numeroTanda === 1) {
-            return inversionAdmin;
-        }
-
-        // Tanda 2 o 3: ganancias inicialmente 0
-        // Lote de 3 tandas: T2 y T3 → ganancias iniciales
-        // Lote de 2 tandas: T2 → ganancias iniciales
-        return new Decimal(0);
     }
 }

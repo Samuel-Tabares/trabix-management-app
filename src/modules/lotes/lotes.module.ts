@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 
 // Controllers
 import { TandasController } from './controllers/tandas.controller';
-import { LotesController } from './controllers/lotes.controller'
+import { LotesController } from './controllers/lotes.controller';
 
 // Repositories
 import { PrismaLoteRepository } from './infrastructure/prisma-lote.repository';
@@ -29,6 +29,7 @@ import { LoteEventHandlers } from './application/events';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 
 // Cuadres Module (para crear cuadres al activar lote)
+// Ahora exporta CalculadoraMontoEsperadoService
 import { CuadresModule } from '../cuadres/cuadres.module';
 
 // Mini-Cuadres Module (para crear mini-cuadre al activar lote)
@@ -53,52 +54,56 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
  * - Transiciones de estado de tandas
  * - Resumen financiero
  *
+ * INTEGRACIÓN EQUIPAMIENTO:
+ * - Al activar lote, los cuadres incluyen deudas de equipamiento
+ * - Usa CalculadoraMontoEsperadoService de CuadresModule
+ *
  * Límites:
  * - Máximo 2 lotes en estado CREADO por vendedor
  * - Inversión mínima del vendedor: $20,000
  */
 @Module({
-  imports: [
-    CqrsModule,
-    ConfigModule,
-    forwardRef(() => UsuariosModule),
-    forwardRef(() => CuadresModule),
-    forwardRef(() => MiniCuadresModule),
-    forwardRef(() => FondoRecompensasModule),
-    forwardRef(() => NotificacionesModule),
-  ],
-  controllers: [LotesController, TandasController],
-  providers: [
-    // Repositories
-    {
-      provide: LOTE_REPOSITORY,
-      useClass: PrismaLoteRepository,
-    },
-    {
-      provide: TANDA_REPOSITORY,
-      useClass: PrismaTandaRepository,
-    },
-    PrismaLoteRepository,
-    PrismaTandaRepository,
+    imports: [
+        CqrsModule,
+        ConfigModule,
+        forwardRef(() => UsuariosModule),
+        forwardRef(() => CuadresModule), // Provee CalculadoraMontoEsperadoService
+        forwardRef(() => MiniCuadresModule),
+        forwardRef(() => FondoRecompensasModule),
+        forwardRef(() => NotificacionesModule),
+    ],
+    controllers: [LotesController, TandasController],
+    providers: [
+        // Repositories
+        {
+            provide: LOTE_REPOSITORY,
+            useClass: PrismaLoteRepository,
+        },
+        {
+            provide: TANDA_REPOSITORY,
+            useClass: PrismaTandaRepository,
+        },
+        PrismaLoteRepository,
+        PrismaTandaRepository,
 
-    // Domain Services
-    CalculadoraInversionService,
-    CalculadoraTandasService,
+        // Domain Services
+        CalculadoraInversionService,
+        CalculadoraTandasService,
 
-    // Command Handlers
-    ...LoteCommandHandlers,
+        // Command Handlers
+        ...LoteCommandHandlers,
 
-    // Query Handlers
-    ...LoteQueryHandlers,
+        // Query Handlers
+        ...LoteQueryHandlers,
 
-    // Event Handlers
-    ...LoteEventHandlers,
-  ],
-  exports: [
-    LOTE_REPOSITORY,
-    TANDA_REPOSITORY,
-    CalculadoraInversionService,
-    CalculadoraTandasService,
-  ],
+        // Event Handlers
+        ...LoteEventHandlers,
+    ],
+    exports: [
+        LOTE_REPOSITORY,
+        TANDA_REPOSITORY,
+        CalculadoraInversionService,
+        CalculadoraTandasService,
+    ],
 })
 export class LotesModule {}

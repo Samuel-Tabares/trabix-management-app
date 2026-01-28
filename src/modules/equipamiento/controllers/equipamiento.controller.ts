@@ -37,10 +37,8 @@ import {
 import {
     SolicitarEquipamientoCommand,
     ActivarEquipamientoCommand,
-    PagarMensualidadCommand,
     ReportarDanoCommand,
     ReportarPerdidaCommand,
-    PagarDanoCommand,
     DevolverEquipamientoCommand,
 } from '../application/commands';
 
@@ -53,181 +51,217 @@ import {
 
 /**
  * Controlador de Equipamiento
- * Según sección 20.11 del documento
+ * Según sección 10 del documento
+ *
+ * Permisos:
+ * - VENDEDOR: solo puede solicitar y ver su propio equipamiento
+ * - ADMIN: puede listar, activar, reportar daños/pérdidas, y marcar devoluciones
  */
 @ApiTags('Equipamiento')
 @ApiBearerAuth('access-token')
 @Controller('equipamiento')
+@UseGuards(AuthGuard('jwt'))
 export class EquipamientoController {
-  constructor(
-    private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
-  ) {}
+    constructor(
+        private readonly commandBus: CommandBus,
+        private readonly queryBus: QueryBus,
+    ) {}
 
-  /**
-   * POST /equipamiento/solicitar
-   * Solicitar equipamiento
-   */
-  @Post('solicitar')
-  @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Solicitar equipamiento' })
-  @ApiResponse({ status: 201, type: EquipamientoResponseDto })
-  async solicitar(
-    @Body() dto: SolicitarEquipamientoDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<EquipamientoResponseDto> {
-    if (!user) throw new UnauthorizedException();
+    // =============================================
+    // ENDPOINTS PARA VENDEDOR
+    // =============================================
 
-    const equipamiento = await this.commandBus.execute(
-      new SolicitarEquipamientoCommand(user.id, dto.tieneDeposito),
-    );
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(equipamiento.id));
-  }
-
-  /**
-   * GET /equipamiento
-   * Listar equipamiento (admin)
-   */
-  @Get()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Listar equipamiento (admin)' })
-  @ApiResponse({ status: 200, type: EquipamientosPaginadosDto })
-  async listar(
-    @Query() queryDto: QueryEquipamientosDto,
-  ): Promise<EquipamientosPaginadosDto> {
-    return this.queryBus.execute(new ListarEquipamientosQuery(queryDto));
-  }
-
-  /**
-   * GET /equipamiento/me
-   * Obtener mi equipamiento
-   */
-  @Get('me')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({ summary: 'Obtener mi equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async obtenerMio(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<EquipamientoResponseDto | null> {
-    if (!user) throw new UnauthorizedException();
-
-    return this.queryBus.execute(new ObtenerMiEquipamientoQuery(user.id));
-  }
-
-  /**
-   * POST /equipamiento/:id/activar
-   * Activar equipamiento (admin)
-   */
-  @Post(':id/activar')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Activar equipamiento (admin)' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async activar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() admin: AuthenticatedUser,
-  ): Promise<EquipamientoResponseDto> {
-    if (!admin) throw new UnauthorizedException();
-
-    await this.commandBus.execute(new ActivarEquipamientoCommand(id, admin.id));
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
-
-  /**
-   * POST /equipamiento/:id/pagar-mensualidad
-   * Registrar pago mensualidad
-   */
-  @Post(':id/pagar-mensualidad')
-  @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Registrar pago mensualidad' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async pagarMensualidad(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<EquipamientoResponseDto> {
-    await this.commandBus.execute(new PagarMensualidadCommand(id));
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
-
-  /**
-   * POST /equipamiento/:id/reportar-dano
-   * Reportar daño (admin)
-   */
-  @Post(':id/reportar-dano')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reportar daño (admin)' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async reportarDano(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: ReportarDanoDto,
-    @CurrentUser() admin: AuthenticatedUser,
-  ): Promise<EquipamientoResponseDto> {
-    if (!admin) throw new UnauthorizedException();
-
-    await this.commandBus.execute(
-      new ReportarDanoCommand(id, dto.tipoDano, admin.id),
-    );
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
-
-  /**
-   * POST /equipamiento/:id/reportar-perdida
-   * Reportar pérdida (admin)
-   */
-  @Post(':id/reportar-perdida')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reportar pérdida (admin)' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async reportarPerdida(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() admin: AuthenticatedUser,
-  ): Promise<EquipamientoResponseDto> {
-    if (!admin) throw new UnauthorizedException();
-
-    await this.commandBus.execute(new ReportarPerdidaCommand(id, admin.id));
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
-
-  /**
-   * POST /equipamiento/:id/pagar-dano
-   * Registrar pago de daño
-   */
-  @Post(':id/pagar-dano')
-  @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Registrar pago de daño' })
-  @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-  @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-  async pagarDano(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<EquipamientoResponseDto> {
-    await this.commandBus.execute(new PagarDanoCommand(id));
-    return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
-  }
     /**
-     * POST /equipamiento/:id/devolver
-     * Devolver equipamiento
+     * POST /equipamiento/solicitar
+     * Solicitar equipamiento (VENDEDOR)
      */
-    @Post(':id/devolver')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Devolver equipamiento' })
+    @Post('solicitar')
+    @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({
+        summary: 'Solicitar equipamiento (vendedor)',
+        description: 'Un vendedor solicita equipamiento (nevera + pijama). Solo puede tener uno activo.',
+    })
+    @ApiResponse({ status: 201, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 400, description: 'Ya tiene equipamiento activo' })
+    async solicitar(
+        @Body() dto: SolicitarEquipamientoDto,
+        @CurrentUser() user: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto> {
+        if (!user) throw new UnauthorizedException();
+
+        const equipamiento = await this.commandBus.execute(
+            new SolicitarEquipamientoCommand(user.id, dto.tieneDeposito),
+        );
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(equipamiento.id));
+    }
+
+    /**
+     * GET /equipamiento/me
+     * Obtener mi equipamiento (VENDEDOR)
+     */
+    @Get('me')
+    @ApiOperation({
+        summary: 'Obtener mi equipamiento',
+        description: 'Retorna el equipamiento activo del vendedor autenticado',
+    })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 404, description: 'No tiene equipamiento' })
+    async obtenerMio(
+        @CurrentUser() user: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto | null> {
+        if (!user) throw new UnauthorizedException();
+
+        return this.queryBus.execute(new ObtenerMiEquipamientoQuery(user.id));
+    }
+
+    // =============================================
+    // ENDPOINTS PARA ADMIN
+    // =============================================
+
+    /**
+     * GET /equipamiento
+     * Listar equipamiento (ADMIN)
+     */
+    @Get()
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @ApiOperation({
+        summary: 'Listar equipamiento (admin)',
+        description: 'Lista todos los equipamientos con filtros opcionales',
+    })
+    @ApiResponse({ status: 200, type: EquipamientosPaginadosDto })
+    async listar(
+        @Query() queryDto: QueryEquipamientosDto,
+    ): Promise<EquipamientosPaginadosDto> {
+        return this.queryBus.execute(new ListarEquipamientosQuery(queryDto));
+    }
+
+    /**
+     * GET /equipamiento/:id
+     * Obtener detalle de equipamiento (ADMIN)
+     */
+    @Get(':id')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @ApiOperation({
+        summary: 'Obtener detalle de equipamiento (admin)',
+        description: 'Obtiene el detalle completo de un equipamiento por ID',
+    })
     @ApiParam({ name: 'id', description: 'ID del equipamiento' })
     @ApiResponse({ status: 200, type: EquipamientoResponseDto })
-    async devolver(
+    @ApiResponse({ status: 404, description: 'Equipamiento no encontrado' })
+    async obtenerPorId(
         @Param('id', ParseUUIDPipe) id: string,
     ): Promise<EquipamientoResponseDto> {
-        await this.commandBus.execute(new DevolverEquipamientoCommand(id));
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
+
+    /**
+     * POST /equipamiento/:id/activar
+     * Activar equipamiento - marcar como entregado (ADMIN)
+     */
+    @Post(':id/activar')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Activar equipamiento (admin)',
+        description: 'Admin confirma la entrega física del equipamiento al vendedor',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 400, description: 'Estado inválido para activación' })
+    async activar(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(new ActivarEquipamientoCommand(id, admin.id));
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
+
+    /**
+     * POST /equipamiento/:id/reportar-dano
+     * Reportar daño (ADMIN)
+     */
+    @Post(':id/reportar-dano')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Reportar daño (admin)',
+        description:
+            'Admin reporta daño de nevera ($30,000) o pijama ($60,000). ' +
+            'Solo aumenta la deuda, no cambia el estado.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 400, description: 'Estado inválido para reportar daño' })
+    async reportarDano(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: ReportarDanoDto,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(
+            new ReportarDanoCommand(id, dto.tipoDano, admin.id),
+        );
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
+
+    /**
+     * POST /equipamiento/:id/reportar-perdida
+     * Reportar pérdida total (ADMIN)
+     */
+    @Post(':id/reportar-perdida')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Reportar pérdida total (admin)',
+        description:
+            'Admin reporta pérdida total del equipamiento. ' +
+            'Genera deuda por el costo total ($90,000) y cambia estado a PERDIDO.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 400, description: 'Estado inválido para reportar pérdida' })
+    async reportarPerdida(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(new ReportarPerdidaCommand(id, admin.id));
+        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
+
+    /**
+     * POST /equipamiento/:id/devolver
+     * Devolver equipamiento (ADMIN)
+     */
+    @Post(':id/devolver')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Devolver equipamiento (admin)',
+        description:
+            'Admin registra la devolución del equipamiento. ' +
+            'Solo si no hay deudas pendientes. Si tiene depósito, se devuelve.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 400, description: 'Tiene deudas pendientes o estado inválido' })
+    async devolver(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(new DevolverEquipamientoCommand(id, admin.id));
         return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
     }
 }

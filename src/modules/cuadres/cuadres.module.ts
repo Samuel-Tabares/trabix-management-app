@@ -8,6 +8,7 @@ import {
     Modelo6040Strategy,
     Modelo5050CascadaStrategy,
 } from './domain/calculadora-ganancias.service';
+import { CalculadoraMontoEsperadoService } from './domain/calculadora-monto-esperado.service';
 import { CUADRE_REPOSITORY } from './domain/cuadre.repository.interface';
 
 // Infrastructure
@@ -24,6 +25,7 @@ import { CuadresController } from './controllers/cuadres.controller';
 // Módulos necesarios
 import { LotesModule } from '../lotes/lotes.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+import { EquipamientoModule } from '../equipamiento/equipamiento.module';
 
 /**
  * Módulo de Cuadres
@@ -35,11 +37,17 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
  * - Triggers automáticos de activación
  * - Confirmación de transferencias
  * - Liberación de tandas al confirmar exitoso
+ * - Integración con deudas de equipamiento
  *
  * Estados de cuadre:
  * - INACTIVO: aún no se cumple el trigger
  * - PENDIENTE: trigger cumplido, esperando transferencia
  * - EXITOSO: admin confirmó transferencia completa
+ *
+ * INTEGRACIÓN EQUIPAMIENTO:
+ * - El monto esperado incluye deudas de equipamiento
+ * - Al confirmar exitoso, se reducen las deudas
+ * - Se registra el pago de mensualidad
  *
  * Configuración:
  * - Los porcentajes de ganancias se configuran vía variables de entorno
@@ -49,9 +57,10 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 @Module({
     imports: [
         CqrsModule,
-        ConfigModule, // Necesario para que las estrategias accedan a ConfigService
+        ConfigModule,
         forwardRef(() => LotesModule),
         forwardRef(() => NotificacionesModule),
+        forwardRef(() => EquipamientoModule), // Agregado para integración
     ],
     controllers: [CuadresController],
     providers: [
@@ -62,10 +71,10 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
         },
 
         // Domain Services - Estrategias de ganancias
-        // Las estrategias ahora usan ConfigService para obtener porcentajes
         Modelo6040Strategy,
         Modelo5050CascadaStrategy,
         CalculadoraGananciasService,
+        CalculadoraMontoEsperadoService, // Nuevo servicio
 
         // Command Handlers
         ...CuadreCommandHandlers,
@@ -79,6 +88,7 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
     exports: [
         CUADRE_REPOSITORY,
         CalculadoraGananciasService,
+        CalculadoraMontoEsperadoService, // Exportar para uso en lotes
         Modelo6040Strategy,
         Modelo5050CascadaStrategy,
     ],
