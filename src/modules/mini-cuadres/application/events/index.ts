@@ -6,6 +6,6 @@ import { MiniCuadreExitosoHandler } from './mini-cuadre-exitoso.handler';
 import { StockUltimaTandaAgotadoHandler } from './stock-ultima-tanda-agotado.event';
 
 export const MiniCuadreEventHandlers = [
-  MiniCuadreExitosoHandler,
-  StockUltimaTandaAgotadoHandler,
+    MiniCuadreExitosoHandler,
+    StockUltimaTandaAgotadoHandler,
 ];
