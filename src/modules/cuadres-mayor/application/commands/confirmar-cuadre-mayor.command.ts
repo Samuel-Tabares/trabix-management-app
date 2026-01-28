@@ -21,6 +21,7 @@ import { DomainException } from '../../../../domain/exceptions/domain.exception'
 import { CuadreMayorExitosoEvent } from '../events/cuadre-mayor-exitoso.event';
 import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
 import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
+import { TandaAfectada, parseDecimalValue } from '../../domain/cuadre-mayor.entity';
 
 /**
  * Command para confirmar un cuadre al mayor
@@ -64,7 +65,7 @@ export class ConfirmarCuadreMayorHandler
         private readonly commandBus: CommandBus,
     ) {}
 
-    async execute(command: ConfirmarCuadreMayorCommand): Promise<any> {
+    async execute(command: ConfirmarCuadreMayorCommand): Promise<unknown> {
         const { cuadreMayorId } = command;
 
         // Buscar el cuadre al mayor
@@ -81,15 +82,24 @@ export class ConfirmarCuadreMayorHandler
             );
         }
 
-        const tandasAfectadas = cuadreMayor.tandasAfectadas as any[];
+        // Parsear tandas afectadas con tipo seguro
+        const tandasAfectadas = this.parseTandasAfectadas(cuadreMayor.tandasAfectadas);
 
         // Helper: procesar tanda agotada
-        const procesarTandaAgotada = async (tandaId: string, loteId: string, numeroTanda: number) => {
+        const procesarTandaAgotada = async (
+            tandaId: string,
+            loteId: string,
+            numeroTanda: number,
+        ): Promise<void> => {
             const tandaActualizada = await this.tandaRepository.findById(tandaId);
-            if (tandaActualizada?.estado !== 'EN_CASA' || tandaActualizada.stockActual > 0) return;
+            if (tandaActualizada?.estado !== 'EN_CASA' || tandaActualizada.stockActual > 0) {
+                return;
+            }
 
             const lote = await this.loteRepository.findById(loteId);
-            if (!lote) return;
+            if (!lote) {
+                return;
+            }
 
             const esUltimaTanda = numeroTanda === lote.tandas.length;
 
@@ -103,19 +113,20 @@ export class ConfirmarCuadreMayorHandler
         };
 
         // 1. Consumir stock de tandas afectadas
-        for (const { tandaId, cantidadStockConsumido, numeroTanda, loteId } of tandasAfectadas) {
-            await this.tandaRepository.consumirStock(tandaId, cantidadStockConsumido);
-            this.logger.log(`Stock consumido: Tanda ${tandaId} - ${cantidadStockConsumido} unidades`);
-            await procesarTandaAgotada(tandaId, loteId, numeroTanda);
+        for (const tanda of tandasAfectadas) {
+            await this.tandaRepository.consumirStock(tanda.tandaId, tanda.cantidadStockConsumido);
+            this.logger.log(`Stock consumido: Tanda ${tanda.tandaId} - ${tanda.cantidadStockConsumido} unidades`);
+            await procesarTandaAgotada(tanda.tandaId, tanda.loteId, tanda.numeroTanda);
         }
 
         // Helper: cerrar cuadres cubiertos
         const cuadresCerradosIds: string[] = [];
-        const cerrarCuadresDeLote = async (loteId: string) => {
+        const cerrarCuadresDeLote = async (loteId: string): Promise<void> => {
             const cuadresLote = await this.cuadreRepository.findByLoteId(loteId);
             for (const cuadre of cuadresLote) {
                 if (cuadre.estado === 'INACTIVO' || cuadre.estado === 'PENDIENTE') {
-                    await this.cuadreRepository.cerrarPorMayor(cuadre.id, cuadreMayorId, cuadreMayor.montoTotalAdmin);
+                    const montoTotalAdmin = parseDecimalValue(cuadreMayor.montoTotalAdmin);
+                    await this.cuadreRepository.cerrarPorMayor(cuadre.id, cuadreMayorId, montoTotalAdmin);
                     cuadresCerradosIds.push(cuadre.id);
                     this.logger.log(`Cuadre cerrado por mayor: ${cuadre.id}`);
                 }
@@ -132,6 +143,7 @@ export class ConfirmarCuadreMayorHandler
             const loteForzadoId = cuadreMayor.loteForzadoId;
             await this.loteRepository.activar(loteForzadoId);
             const loteForzado = await this.loteRepository.findById(loteForzadoId);
+
             if (loteForzado) {
                 for (const tanda of loteForzado.tandas) {
                     await this.tandaRepository.finalizar(tanda.id);
@@ -153,18 +165,22 @@ export class ConfirmarCuadreMayorHandler
         }
 
         // 4. Actualizar dinero recaudado y transferido de lotes involucrados
+        const ingresoBruto = parseDecimalValue(cuadreMayor.ingresoBruto);
+        const montoTotalAdmin = parseDecimalValue(cuadreMayor.montoTotalAdmin);
+
         for (const loteId of cuadreMayor.lotesInvolucradosIds) {
-            await this.loteRepository.actualizarRecaudado(loteId, cuadreMayor.ingresoBruto);
-            await this.loteRepository.actualizarTransferido(loteId, cuadreMayor.montoTotalAdmin);
+            await this.loteRepository.actualizarRecaudado(loteId, ingresoBruto);
+            await this.loteRepository.actualizarTransferido(loteId, montoTotalAdmin);
         }
 
         // 5. Confirmar cuadre al mayor
-        const cuadreConfirmado = await this.cuadreMayorRepository.confirmarExitoso(cuadreMayorId, cuadresCerradosIds);
+        const cuadreConfirmado = await this.cuadreMayorRepository.confirmarExitoso(
+            cuadreMayorId,
+            cuadresCerradosIds,
+        );
 
         this.logger.log(
-            `Cuadre al mayor confirmado: ${cuadreMayorId} - Admin: $${Number.parseFloat(
-                cuadreMayor.montoTotalAdmin as any,
-            ).toFixed(2)} - Cuadres cerrados: ${cuadresCerradosIds.length}`,
+            `Cuadre al mayor confirmado: ${cuadreMayorId} - Admin: $${montoTotalAdmin.toFixed(2)} - Cuadres cerrados: ${cuadresCerradosIds.length}`,
         );
 
         this.eventBus.publish(
@@ -178,5 +194,21 @@ export class ConfirmarCuadreMayorHandler
         );
 
         return cuadreConfirmado;
+    }
+
+    /**
+     * Parsea las tandas afectadas desde el JSON almacenado
+     */
+    private parseTandasAfectadas(data: unknown): TandaAfectada[] {
+        if (!Array.isArray(data)) {
+            return [];
+        }
+
+        return data.map((item: Record<string, unknown>) => ({
+            tandaId: String(item.tandaId ?? ''),
+            cantidadStockConsumido: Number(item.cantidadStockConsumido ?? 0),
+            numeroTanda: Number(item.numeroTanda ?? 0),
+            loteId: String(item.loteId ?? ''),
+        }));
     }
 }

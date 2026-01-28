@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { ConfigModule } from '@nestjs/config';
 
 // Controllers
 import { CuadresMayorController } from './controllers/cuadres-mayor.controller';
@@ -22,34 +23,48 @@ import { CuadresModule } from '../cuadres/cuadres.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
 import { FondoRecompensasModule } from '../fondo-recompensas/fondo-recompensas.module';
+
+/**
+ * Módulo de Cuadres al Mayor
+ * Según sección 8 del documento
+ *
+ * Responsabilidades:
+ * - Gestión de cuadres al mayor (ventas mayoristas)
+ * - Evaluación financiera completa
+ * - Cierre automático de cuadres normales
+ * - Gestión de lotes forzados
+ * - Distribución de ganancias con jerarquía de reclutadores
+ *
+ * Estados de cuadre al mayor:
+ * - PENDIENTE: registrado, esperando confirmación
+ * - EXITOSO: admin confirmó la operación
+ */
 @Module({
-  imports: [
-    CqrsModule,
-    forwardRef(() => LotesModule),
-    forwardRef(() => CuadresModule),
-    forwardRef(() => UsuariosModule),
-    forwardRef(() => NotificacionesModule),
-    forwardRef(() => FondoRecompensasModule),
-  ],
-  controllers: [CuadresMayorController],
-  providers: [
-    // Repository
-    {
-      provide: CUADRE_MAYOR_REPOSITORY,
-      useClass: PrismaCuadreMayorRepository,
-    },
-    // Domain Services
-    EvaluadorFinancieroMayorService,
-    // Command Handlers
-    ...CuadreMayorCommandHandlers,
-    // Query Handlers
-    ...CuadreMayorQueryHandlers,
-    // Event Handlers
-    ...CuadreMayorEventHandlers,
-  ],
-  exports: [
-    CUADRE_MAYOR_REPOSITORY,
-    EvaluadorFinancieroMayorService,
-  ],
+    imports: [
+        CqrsModule,
+        ConfigModule, // Necesario para acceder a configuración
+        forwardRef(() => LotesModule),
+        forwardRef(() => CuadresModule),
+        forwardRef(() => UsuariosModule),
+        forwardRef(() => NotificacionesModule),
+        forwardRef(() => FondoRecompensasModule),
+    ],
+    controllers: [CuadresMayorController],
+    providers: [
+        // Repository
+        {
+            provide: CUADRE_MAYOR_REPOSITORY,
+            useClass: PrismaCuadreMayorRepository,
+        },
+        // Domain Services
+        EvaluadorFinancieroMayorService,
+        // Command Handlers
+        ...CuadreMayorCommandHandlers,
+        // Query Handlers
+        ...CuadreMayorQueryHandlers,
+        // Event Handlers
+        ...CuadreMayorEventHandlers,
+    ],
+    exports: [CUADRE_MAYOR_REPOSITORY, EvaluadorFinancieroMayorService],
 })
 export class CuadresMayorModule {}
