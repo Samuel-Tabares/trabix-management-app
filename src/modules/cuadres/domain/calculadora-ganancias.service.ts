@@ -38,38 +38,27 @@ export interface GananciaReclutador {
 }
 
 /**
- * Resultado completo del cálculo de ganancias
- */
-export interface ResultadoCalculoGanancias {
-    hayGanancias: boolean;
-    gananciaTotal: Decimal;
-    gananciaVendedor: Decimal;
-    gananciaAdmin: Decimal;
-    gananciasReclutadores: GananciaReclutador[];
-}
-
-/**
  * Strategy: Modelo 60/40
  * Según sección 16.5 del documento
  *
  * ganancia_vendedor = ganancia_total × porcentaje_vendedor
  * ganancia_admin = ganancia_total × porcentaje_admin
+ *
+ * Los porcentajes se obtienen de ConfigService.
  */
 @Injectable()
 export class Modelo6040Strategy implements IGananciaStrategy {
-    private readonly porcentajeVendedor: number;
-    private readonly porcentajeAdmin: number;
+    private readonly porcentajeVendedor: Decimal;
+    private readonly porcentajeAdmin: Decimal;
 
     constructor(private readonly configService: ConfigService) {
-        // Usar valores de configuración, con fallback a valores por defecto
-        this.porcentajeVendedor = this.configService.get<number>(
-            'porcentajes.vendedor6040',
-            60,
-        ) / 100;
-        this.porcentajeAdmin = this.configService.get<number>(
-            'porcentajes.admin6040',
-            40,
-        ) / 100;
+        // Cargar porcentajes desde configuración (vienen como 60, 40, etc.)
+        const vendedorPct = this.configService.get<number>('porcentajes.vendedor6040') ?? 60;
+        const adminPct = this.configService.get<number>('porcentajes.admin6040') ?? 40;
+
+        // Convertir a decimal (0.6, 0.4)
+        this.porcentajeVendedor = new Decimal(vendedorPct).dividedBy(100);
+        this.porcentajeAdmin = new Decimal(adminPct).dividedBy(100);
     }
 
     calcular(gananciaTotal: Decimal): ResultadoGanancias {
@@ -88,31 +77,33 @@ export class Modelo6040Strategy implements IGananciaStrategy {
  * Strategy: Modelo 50/50 con Cascada
  * Según sección 16.5 del documento
  *
- * ganancia_vendedor_N = ganancia_total × 0.5
- * ganancia_reclutador_N-1 = ganancia_vendedor_N × 0.5
- * ganancia_reclutador_N-2 = ganancia_reclutador_N-1 × 0.5
- * ... (continúa hasta admin)
- * ganancia_admin = ganancia_ultimo_reclutador
+ * La cascada SIEMPRE divide por 2 (50/50 fijo en cada nivel):
+ * - ganancia_vendedor_N = ganancia_total × 0.5
+ * - ganancia_reclutador_N-1 = ganancia_vendedor_N × 0.5
+ * - ganancia_reclutador_N-2 = ganancia_reclutador_N-1 × 0.5
+ * - ... (continúa hasta admin)
+ * - ganancia_admin = igual que el último nivel de reclutador (nivel 2)
  *
- * Ejemplo 4 niveles con ganancia_total = $100,000:
+ * Admin es nivel 1, así que recibe el mismo porcentaje que reclutador nivel 2.
+ *
+ * Ejemplo con 4 niveles y ganancia_total = $100,000:
  * - Vendedor (N): $100,000 × 0.5 = $50,000
  * - Reclutador (N-1): $50,000 × 0.5 = $25,000
  * - Reclutador (N-2): $25,000 × 0.5 = $12,500
- * - Admin: $12,500
+ * - Admin (nivel 1): $12,500 (igual que nivel 2)
  */
 @Injectable()
 export class Modelo5050CascadaStrategy implements IGananciaStrategy {
-    private readonly porcentajeVendedor: number;
-    private readonly porcentajeCascada: number;
+    private readonly porcentajeVendedor: Decimal;
+    private readonly divisorCascada: Decimal;
 
     constructor(private readonly configService: ConfigService) {
-        // Usar valores de configuración, con fallback a valores por defecto
-        this.porcentajeVendedor = this.configService.get<number>(
-            'porcentajes.vendedor5050',
-            50,
-        ) / 100;
-        // La cascada siempre es 50% del nivel anterior
-        this.porcentajeCascada = 0.5;
+        // Cargar porcentaje inicial del vendedor desde configuración
+        const vendedorPct = this.configService.get<number>('porcentajes.vendedor5050') ?? 50;
+        this.porcentajeVendedor = new Decimal(vendedorPct).dividedBy(100);
+
+        // La cascada SIEMPRE divide por 2 (50/50 fijo según regla de negocio)
+        this.divisorCascada = new Decimal(0.5);
     }
 
     calcular(gananciaTotal: Decimal, jerarquia: JerarquiaReclutador[] = []): ResultadoGanancias {
@@ -126,8 +117,9 @@ export class Modelo5050CascadaStrategy implements IGananciaStrategy {
         const jerarquiaOrdenada = [...jerarquia].sort((a, b) => a.nivel - b.nivel);
 
         // Calcular ganancia para cada reclutador en la cascada
+        // Cada nivel recibe 50% del nivel anterior (división fija)
         for (const reclutador of jerarquiaOrdenada) {
-            const gananciaReclutador = gananciaActual.times(this.porcentajeCascada);
+            const gananciaReclutador = gananciaActual.times(this.divisorCascada);
             gananciasReclutadores.push({
                 reclutadorId: reclutador.id,
                 nivel: reclutador.nivel,
@@ -139,8 +131,8 @@ export class Modelo5050CascadaStrategy implements IGananciaStrategy {
         // Según documento: ganancia_admin = ganancia_ultimo_reclutador
         // Si no hay reclutadores, 50/50 directo con vendedor
         const gananciaAdmin = jerarquiaOrdenada.length > 0
-            ? gananciaActual // Admin recibe igual que el último reclutador
-            : gananciaTotal.times(this.porcentajeCascada);
+            ? gananciaActual  // Admin recibe igual que el último nivel calculado
+            : gananciaTotal.times(this.divisorCascada);
 
         return {
             gananciaVendedor,
@@ -213,4 +205,15 @@ export class CalculadoraGananciasService {
             ...resultado,
         };
     }
+}
+
+/**
+ * Resultado completo del cálculo de ganancias
+ */
+export interface ResultadoCalculoGanancias {
+    hayGanancias: boolean;
+    gananciaTotal: Decimal;
+    gananciaVendedor: Decimal;
+    gananciaAdmin: Decimal;
+    gananciasReclutadores: GananciaReclutador[];
 }
