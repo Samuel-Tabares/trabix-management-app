@@ -7,7 +7,7 @@ function parseExpirationToSeconds(expiration: string): number {
     const match = expiration.match(/^(\d+)([smhd])$/);
     if (!match) return 900; // default 15 minutos
 
-    const value = parseInt(match[1], 10);
+    const value = Number.parseInt(match[1], 10);
     const unit = match[2];
 
     switch (unit) {
