@@ -18,7 +18,6 @@ import {
 } from '../../../mini-cuadres/domain/mini-cuadre.repository.interface';
 import { CalculadoraMontoEsperadoService } from '../../../cuadres/domain/calculadora-monto-esperado.service';
 import { RegistrarEntradaFondoCommand } from '../../../fondo-recompensas/application/commands';
-import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
 
 /**
  * Handler del evento LoteActivado
@@ -137,15 +136,7 @@ export class LoteActivadoHandler implements IEventHandler<LoteActivadoEvent> {
                 `Entrada registrada en fondo de recompensas: $${aporteFondo.toFixed(2)}`,
             );
 
-            // Enviar notificación al vendedor
-            await this.commandBus.execute(
-                new EnviarNotificacionCommand(event.vendedorId, 'TANDA_LIBERADA', {
-                    loteId: event.loteId,
-                    cantidadTrabix: event.cantidadTrabix,
-                    numeroTanda: 1,
-                    cantidad: lote.tandas.find((t) => t.numero === 1)?.stockInicial || 0,
-                }),
-            );
+            // TODO Enviar notificación al vendedor
 
             this.logger.log(`LoteActivadoEvent procesado exitosamente: ${event.loteId}`);
         } catch (error) {

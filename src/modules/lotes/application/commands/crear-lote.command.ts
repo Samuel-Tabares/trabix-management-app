@@ -27,8 +27,7 @@ export class CrearLoteCommand implements ICommand {
 
 /**
  * Handler del comando CrearLote
- * Según sección 3.2 del documento:
- * 1. Admin crea lote manualmente → Estado: CREADO
+ * 1. Admin crea lote manualmente o vendedor solicita → Estado: CREADO
  * 2. Sistema genera mensaje de WhatsApp para el vendedor
  * 3. Vendedor transfiere inversión
  * 4. Admin valida transferencia → Tanda 1 se libera → Estado: ACTIVO

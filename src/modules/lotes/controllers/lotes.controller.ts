@@ -55,21 +55,19 @@ import {
 
 /**
  * Controlador de Lotes
- * Según sección 20.4 del documento
  *
  * Endpoints ADMIN:
  * - POST /              - Crear lote directamente (admin)
  * - GET  /              - Listar todos los lotes (admin)
- * - POST /:id/activar   - Activar lote (admin)
- * - GET  /:id/jerarquia - Ver jerarquía de cualquier lote (admin)
  *
- * Endpoints VENDEDOR/RECLUTADOR:
+ * Endpoints VENDEDOR/RECLUTADOR
  * - POST /solicitar     - Solicitar lote (vendedor/reclutador)
  * - GET  /info-solicitud - Obtener info para solicitar (vendedor/reclutador)
  * - GET  /mis-lotes     - Listar mis lotes (vendedor/reclutador)
  *
- * Endpoints COMPARTIDOS:
+ * Endpoints con parámetros
  * - GET  /:id           - Obtener lote (admin o dueño)
+ * - POST /:id/activar   - Activar lote (admin)
  * - POST /:id/cancelar  - Cancelar solicitud (admin o dueño)
  * - GET  /:id/resumen-financiero - Resumen financiero (admin o dueño)
  */
@@ -83,7 +81,7 @@ export class LotesController {
         private readonly queryBus: QueryBus,
     ) {}
 
-    // ==================== ENDPOINTS ADMIN ====================
+    // ==================== ENDPOINTS ADMIN (sin parámetros dinámicos) ====================
 
     /**
      * POST /lotes
@@ -135,38 +133,8 @@ export class LotesController {
         return this.queryBus.execute(new ListarLotesQuery(queryDto));
     }
 
-    /**
-     * POST /lotes/:id/activar
-     * Activa un lote (admin confirma pago de inversión)
-     */
-    @Post(':id/activar')
-    @Roles('ADMIN')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({
-        summary: 'Activar lote (admin)',
-        description:
-            'Activa un lote después de confirmar el pago de inversión. ' +
-            'Libera la primera tanda y crea los cuadres correspondientes.',
-    })
-    @ApiParam({ name: 'id', description: 'ID del lote' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lote activado exitosamente',
-        type: LoteResponseDto,
-    })
-    @ApiResponse({ status: 404, description: 'Lote no encontrado' })
-    @ApiResponse({ status: 409, description: 'Lote no está en estado CREADO' })
-    async activar(
-        @Param('id', ParseUUIDPipe) id: string,
-        @CurrentUser() admin: AuthenticatedUser,
-    ): Promise<LoteResponseDto> {
-        if (!admin) throw new UnauthorizedException();
-
-        await this.commandBus.execute(new ActivarLoteCommand(id, admin.id));
-        return this.queryBus.execute(new ObtenerLoteQuery(id));
-    }
-
-    // ==================== ENDPOINTS VENDEDOR/RECLUTADOR ====================
+    // ==================== ENDPOINTS VENDEDOR/RECLUTADOR (rutas estáticas) ====================
+    // IMPORTANTE: Estas rutas DEBEN ir ANTES de las rutas con :id
 
     /**
      * POST /lotes/solicitar
@@ -255,7 +223,8 @@ export class LotesController {
         return this.queryBus.execute(new ListarMisLotesQuery(user.id, queryDto));
     }
 
-    // ==================== ENDPOINTS COMPARTIDOS ====================
+    // ==================== ENDPOINTS CON PARÁMETROS DINÁMICOS (:id) ====================
+    // IMPORTANTE: Estas rutas DEBEN ir DESPUÉS de las rutas estáticas
 
     /**
      * GET /lotes/:id
@@ -289,6 +258,37 @@ export class LotesController {
         }
 
         return lote;
+    }
+
+    /**
+     * POST /lotes/:id/activar
+     * Activa un lote (admin confirma pago de inversión)
+     */
+    @Post(':id/activar')
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Activar lote (admin)',
+        description:
+            'Activa un lote después de confirmar el pago de inversión. ' +
+            'Libera la primera tanda y crea los cuadres correspondientes.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del lote' })
+    @ApiResponse({
+        status: 200,
+        description: 'Lote activado exitosamente',
+        type: LoteResponseDto,
+    })
+    @ApiResponse({ status: 404, description: 'Lote no encontrado' })
+    @ApiResponse({ status: 409, description: 'Lote no está en estado CREADO' })
+    async activar(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<LoteResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(new ActivarLoteCommand(id, admin.id));
+        return this.queryBus.execute(new ObtenerLoteQuery(id));
     }
 
     /**
