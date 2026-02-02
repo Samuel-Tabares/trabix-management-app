@@ -11,7 +11,6 @@ import {
     HttpStatus,
     ParseUUIDPipe,
     UseGuards,
-    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -34,20 +33,10 @@ import {
     UsuariosPaginadosDto,
     UsuarioJerarquiaDto,
 } from '../application/dto/usuario-response.dto';
-
-import {
-    CreateUsuarioDto,
-} from '../application/dto/create-usuario.dto';
-import {
-    UpdateUsuarioDto,
-} from '../application/dto/update-usuario.dto';
-
-import {
-    QueryUsuariosDto,
-} from '../application/dto/query-usuarios.dto';
-import {
-    CambiarEstadoDto,
-} from '../application/dto/cambiar-estado.dto';
+import { CreateUsuarioDto } from '../application/dto/create-usuario.dto';
+import { UpdateUsuarioDto } from '../application/dto/update-usuario.dto';
+import { QueryUsuariosDto } from '../application/dto/query-usuarios.dto';
+import { CambiarEstadoDto } from '../application/dto/cambiar-estado.dto';
 
 // Commands
 import {
@@ -68,7 +57,6 @@ import {
 
 /**
  * Controlador de Usuarios
- * Según sección 20.3 del documento
  *
  * Endpoints:
  * - POST /              - Crear vendedor (admin)
@@ -131,8 +119,6 @@ export class UsuariosController {
         @Body() createDto: CreateUsuarioDto,
         @CurrentUser() admin: AuthenticatedUser,
     ) {
-        if (!admin) throw new UnauthorizedException();
-
         const result = await this.commandBus.execute(
             new CrearUsuarioCommand(createDto, admin.id),
         );
@@ -168,7 +154,6 @@ export class UsuariosController {
     /**
      * GET /usuarios/eliminados
      * Lista usuarios eliminados (sección de eliminados)
-     * Según sección 1.2: "registro pasa a sección de eliminados"
      */
     @Get('eliminados')
     @Roles('ADMIN')
@@ -203,8 +188,6 @@ export class UsuariosController {
     async obtenerPerfil(
         @CurrentUser() user: AuthenticatedUser,
     ): Promise<UsuarioResponseDto> {
-        if (!user) throw new UnauthorizedException();
-
         return this.queryBus.execute(new ObtenerPerfilQuery(user.id));
     }
 
@@ -234,8 +217,6 @@ export class UsuariosController {
     async obtenerMiJerarquia(
         @CurrentUser() user: AuthenticatedUser,
     ): Promise<UsuarioJerarquiaDto> {
-        if (!user) throw new UnauthorizedException();
-
         return this.queryBus.execute(
             new ObtenerJerarquiaQuery(user.id, user.id, user.rol),
         );
@@ -281,8 +262,6 @@ export class UsuariosController {
         @Body() updateDto: UpdateUsuarioDto,
         @CurrentUser() admin: AuthenticatedUser,
     ): Promise<UsuarioResponseDto> {
-        if (!admin) throw new UnauthorizedException();
-
         const usuario = await this.commandBus.execute(
             new ActualizarUsuarioCommand(id, updateDto, admin.id),
         );
@@ -292,7 +271,6 @@ export class UsuariosController {
     /**
      * PATCH /usuarios/:id/estado
      * Cambia el estado de un vendedor (ACTIVO/INACTIVO)
-     * Según sección 1.2 del documento
      */
     @Patch(':id/estado')
     @Roles('ADMIN')
@@ -314,8 +292,6 @@ export class UsuariosController {
         @Body() cambiarEstadoDto: CambiarEstadoDto,
         @CurrentUser() admin: AuthenticatedUser,
     ): Promise<UsuarioResponseDto> {
-        if (!admin) throw new UnauthorizedException();
-
         const usuario = await this.commandBus.execute(
             new CambiarEstadoCommand(id, cambiarEstadoDto.estado, admin.id),
         );
@@ -325,7 +301,7 @@ export class UsuariosController {
     /**
      * DELETE /usuarios/:id
      * Elimina un vendedor (soft delete)
-     * Según sección 1.2: "registro pasa a sección de eliminados"
+     * Solo si NO tiene reclutados activos
      */
     @Delete(':id')
     @Roles('ADMIN')
@@ -334,7 +310,7 @@ export class UsuariosController {
         summary: 'Eliminar vendedor (admin)',
         description:
             'Elimina un vendedor (soft delete). El registro pasa a la sección de eliminados. ' +
-            'También elimina jerarquías inferiores asociadas.',
+            'Solo se puede eliminar si el usuario NO tiene reclutados activos.',
     })
     @ApiParam({ name: 'id', description: 'ID del vendedor' })
     @ApiResponse({
@@ -348,12 +324,14 @@ export class UsuariosController {
         },
     })
     @ApiResponse({ status: 404, description: 'Vendedor no encontrado' })
+    @ApiResponse({
+        status: 409,
+        description: 'No se puede eliminar porque tiene reclutados activos',
+    })
     async eliminar(
         @Param('id', ParseUUIDPipe) id: string,
         @CurrentUser() admin: AuthenticatedUser,
     ) {
-        if (!admin) throw new UnauthorizedException();
-
         await this.commandBus.execute(new EliminarUsuarioCommand(id, admin.id));
         return { message: 'Vendedor eliminado exitosamente' };
     }
@@ -361,7 +339,7 @@ export class UsuariosController {
     /**
      * POST /usuarios/:id/restaurar
      * Restaura un usuario eliminado
-     * El usuario se restaura en estado INACTIVO, el admin decide si activarlo
+     * El usuario se restaura en estado INACTIVO
      */
     @Post(':id/restaurar')
     @Roles('ADMIN')
@@ -384,8 +362,6 @@ export class UsuariosController {
         @Param('id', ParseUUIDPipe) id: string,
         @CurrentUser() admin: AuthenticatedUser,
     ): Promise<UsuarioResponseDto> {
-        if (!admin) throw new UnauthorizedException();
-
         await this.commandBus.execute(new RestaurarUsuarioCommand(id, admin.id));
         return this.queryBus.execute(new ObtenerUsuarioQuery(id));
     }
@@ -393,11 +369,6 @@ export class UsuariosController {
     /**
      * GET /usuarios/:id/jerarquia
      * Obtiene el árbol de jerarquía de un usuario (solo admin)
-     *
-     * Reglas de acceso:
-     * - ADMIN: puede ver cualquier jerarquía
-     * - RECLUTADOR: debe usar /usuarios/me/jerarquia para ver su propia rama
-     * - VENDEDOR: no tiene acceso a jerarquías
      */
     @Get(':id/jerarquia')
     @Roles('ADMIN')
@@ -405,8 +376,7 @@ export class UsuariosController {
         summary: 'Obtener árbol de jerarquía (admin)',
         description:
             'Obtiene el árbol completo de jerarquía de cualquier usuario. ' +
-            'Incluye todos los reclutados directos e indirectos con sus ganancias. ' +
-            'Solo disponible para administradores.',
+            'Incluye todos los reclutados directos e indirectos con sus ganancias.',
     })
     @ApiParam({ name: 'id', description: 'ID del usuario' })
     @ApiResponse({
@@ -419,8 +389,6 @@ export class UsuariosController {
         @Param('id', ParseUUIDPipe) id: string,
         @CurrentUser() admin: AuthenticatedUser,
     ): Promise<UsuarioJerarquiaDto> {
-        if (!admin) throw new UnauthorizedException();
-
         return this.queryBus.execute(
             new ObtenerJerarquiaQuery(id, admin.id, admin.rol),
         );
