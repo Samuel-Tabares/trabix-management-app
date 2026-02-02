@@ -26,6 +26,7 @@ import {
     ResumenDashboardDto,
     VentasPeriodoDto,
     CuadrePendienteResumenDto,
+    VendedoresActivosDetalleDto,
 } from '../dto';
 
 // ========== ObtenerPedidoStockQuery ==========
@@ -518,9 +519,13 @@ export class ResumenDashboardHandler
                 }),
                 // Cuadres pendientes
                 this.prisma.cuadre.count({ where: { estado: 'PENDIENTE' } }),
-                // Vendedores activos
+                // Vendedores activos (VENDEDOR + RECLUTADOR)
                 this.prisma.usuario.count({
-                    where: { rol: 'VENDEDOR', estado: 'ACTIVO', eliminado: false },
+                    where: {
+                        rol: { in: ['VENDEDOR', 'RECLUTADOR'] },
+                        estado: 'ACTIVO',
+                        eliminado: false,
+                    },
                 }),
                 // Stock admin
                 this.prisma.stockAdmin.findFirst(),
@@ -614,14 +619,25 @@ export class VendedoresActivosQuery implements IQuery {}
 
 @QueryHandler(VendedoresActivosQuery)
 export class VendedoresActivosHandler
-    implements IQueryHandler<VendedoresActivosQuery>
+    implements IQueryHandler<VendedoresActivosQuery, VendedoresActivosDetalleDto>
 {
     constructor(private readonly prisma: PrismaService) {}
 
-    async execute(): Promise<number> {
-        return this.prisma.usuario.count({
-            where: { rol: 'VENDEDOR', estado: 'ACTIVO', eliminado: false },
-        });
+    async execute(): Promise<VendedoresActivosDetalleDto> {
+        const [vendedores, reclutadores] = await Promise.all([
+            this.prisma.usuario.count({
+                where: { rol: 'VENDEDOR', estado: 'ACTIVO', eliminado: false },
+            }),
+            this.prisma.usuario.count({
+                where: { rol: 'RECLUTADOR', estado: 'ACTIVO', eliminado: false },
+            }),
+        ]);
+
+        return {
+            total: vendedores + reclutadores,
+            vendedores,
+            reclutadores,
+        };
     }
 }
 

@@ -38,6 +38,20 @@ export class CrearPedidoStockDto {
     notas?: string;
 }
 
+export class ModificarPedidoStockDto {
+    @ApiPropertyOptional({ description: 'Nueva cantidad de TRABIX', minimum: 1 })
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt({ message: 'La cantidad debe ser un número entero' })
+    @Min(1, { message: 'La cantidad mínima es 1' })
+    cantidadTrabix?: number;
+
+    @ApiPropertyOptional({ description: 'Notas adicionales' })
+    @IsOptional()
+    @IsString({ message: 'Las notas deben ser texto' })
+    notas?: string;
+}
+
 export class AgregarCostoDto {
     @ApiProperty({ description: 'Concepto del costo' })
     @IsString({ message: 'El concepto debe ser texto' })
@@ -358,7 +372,7 @@ export class ResumenDashboardDto {
     @ApiProperty({ description: 'Cuadres pendientes de confirmar' })
     cuadresPendientes!: number;
 
-    @ApiProperty({ description: 'Vendedores activos' })
+    @ApiProperty({ description: 'Total de usuarios activos que pueden vender (VENDEDOR + RECLUTADOR)' })
     vendedoresActivos!: number;
 
     @ApiProperty({ description: 'Saldo del fondo de recompensas' })
@@ -397,6 +411,19 @@ export class CuadrePendienteResumenDto {
 
     @ApiProperty()
     fechaPendiente!: Date;
+}
+
+// ========== Vendedores Activos DTO ==========
+
+export class VendedoresActivosDetalleDto {
+    @ApiProperty({ description: 'Total de usuarios activos que pueden vender' })
+    total!: number;
+
+    @ApiProperty({ description: 'Cantidad con rol VENDEDOR' })
+    vendedores!: number;
+
+    @ApiProperty({ description: 'Cantidad con rol RECLUTADOR (también venden)' })
+    reclutadores!: number;
 }
 
 // ========== Cancelar Pedido DTO ==========

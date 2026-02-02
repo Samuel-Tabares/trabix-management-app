@@ -2,6 +2,7 @@ import {
     Controller,
     Get,
     Post,
+    Patch,
     Delete,
     Param,
     Body,
@@ -26,6 +27,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 // DTOs
 import {
     CrearPedidoStockDto,
+    ModificarPedidoStockDto,
     AgregarCostoDto,
     QueryPedidosDto,
     CancelarPedidoDto,
@@ -38,6 +40,7 @@ import {
 // Commands
 import {
     CrearPedidoStockCommand,
+    ModificarPedidoStockCommand,
     AgregarCostoPedidoCommand,
     EliminarCostoPedidoCommand,
     ConfirmarPedidoStockCommand,
@@ -56,7 +59,6 @@ import {
 
 /**
  * Controller de Stock Admin
- * Según sección 20.15 del documento
  *
  * Endpoints:
  * - GET /admin/stock           - Estado actual del stock
@@ -127,12 +129,12 @@ export class StockAdminController {
 
 /**
  * Controller de Pedidos de Stock
- * Según sección 20.16 del documento
  *
  * Endpoints:
  * - POST /admin/pedidos-stock              - Crear pedido (BORRADOR)
  * - GET  /admin/pedidos-stock              - Listar pedidos
  * - GET  /admin/pedidos-stock/:id          - Obtener pedido
+ * - PATCH /admin/pedidos-stock/:id         - Modificar pedido (solo BORRADOR)
  * - POST /admin/pedidos-stock/:id/costos   - Agregar costo
  * - DELETE /admin/pedidos-stock/:id/costos/:costoId - Eliminar costo
  * - POST /admin/pedidos-stock/:id/confirmar - Confirmar pedido
@@ -189,6 +191,30 @@ export class PedidosStockController {
     async obtener(
         @Param('id', ParseUUIDPipe) id: string,
     ): Promise<PedidoStockResponseDto> {
+        return this.queryBus.execute(new ObtenerPedidoStockQuery(id));
+    }
+
+    /**
+     * PATCH /admin/pedidos-stock/:id
+     * Modificar pedido (solo en BORRADOR)
+     */
+    @Patch(':id')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Modificar pedido (solo en BORRADOR)',
+        description: 'Permite modificar cantidad de TRABIX y notas mientras el pedido está en BORRADOR',
+    })
+    @ApiParam({ name: 'id', description: 'ID del pedido' })
+    @ApiResponse({ status: 200, type: PedidoStockResponseDto })
+    @ApiResponse({ status: 404, description: 'Pedido no encontrado' })
+    @ApiResponse({ status: 409, description: 'Pedido no está en estado BORRADOR' })
+    async modificar(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: ModificarPedidoStockDto,
+    ): Promise<PedidoStockResponseDto> {
+        await this.commandBus.execute(
+            new ModificarPedidoStockCommand(id, dto.cantidadTrabix, dto.notas),
+        );
         return this.queryBus.execute(new ObtenerPedidoStockQuery(id));
     }
 
