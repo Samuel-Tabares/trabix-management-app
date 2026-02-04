@@ -22,6 +22,7 @@ import { LotesModule } from '../lotes/lotes.module';
 import { UsuariosModule } from '../usuarios/usuarios.module';
 import { CuadresMayorModule } from '../cuadres-mayor/cuadres-mayor.module';
 import { CuadresModule } from '../cuadres/cuadres.module';
+import {EquipamientoModule} from "../equipamiento/equipamiento.module";
 
 /**
  * Módulo de Ventas al Mayor
@@ -45,6 +46,7 @@ import { CuadresModule } from '../cuadres/cuadres.module';
         forwardRef(() => UsuariosModule),
         forwardRef(() => CuadresMayorModule),
         forwardRef(() => CuadresModule),
+        forwardRef(() => EquipamientoModule), // Para ObtenerDeudaEquipamientoQuery
     ],
     controllers: [VentasMayorController],
     providers: [
