@@ -9,6 +9,7 @@ import {
     Modelo5050CascadaStrategy,
 } from './domain/calculadora-ganancias.service';
 import { CalculadoraMontoEsperadoService } from './domain/calculadora-monto-esperado.service';
+import { ActualizadorCuadresVendedorService } from './domain/actualizador-cuadres-vendedor.service';
 import { CUADRE_REPOSITORY } from './domain/cuadre.repository.interface';
 
 // Infrastructure
@@ -38,6 +39,7 @@ import { EquipamientoModule } from '../equipamiento/equipamiento.module';
  * - Confirmación de transferencias
  * - Liberación de tandas al confirmar exitoso
  * - Integración con deudas de equipamiento
+ * - Actualización dinámica de montoEsperado
  *
  * Estados de cuadre:
  * - INACTIVO: aún no se cumple el trigger
@@ -48,6 +50,7 @@ import { EquipamientoModule } from '../equipamiento/equipamiento.module';
  * - El monto esperado incluye deudas de equipamiento
  * - Al confirmar exitoso, se reducen las deudas
  * - Se registra el pago de mensualidad
+ * - ActualizadorCuadresVendedorService mantiene sincronizado el montoEsperado
  *
  * Configuración:
  * - Los porcentajes de ganancias se configuran vía variables de entorno
@@ -60,7 +63,7 @@ import { EquipamientoModule } from '../equipamiento/equipamiento.module';
         ConfigModule,
         forwardRef(() => LotesModule),
         forwardRef(() => NotificacionesModule),
-        forwardRef(() => EquipamientoModule), // Agregado para integración
+        forwardRef(() => EquipamientoModule),
     ],
     controllers: [CuadresController],
     providers: [
@@ -74,7 +77,8 @@ import { EquipamientoModule } from '../equipamiento/equipamiento.module';
         Modelo6040Strategy,
         Modelo5050CascadaStrategy,
         CalculadoraGananciasService,
-        CalculadoraMontoEsperadoService, // Nuevo servicio
+        CalculadoraMontoEsperadoService,
+        ActualizadorCuadresVendedorService,
 
         // Command Handlers
         ...CuadreCommandHandlers,
@@ -88,7 +92,8 @@ import { EquipamientoModule } from '../equipamiento/equipamiento.module';
     exports: [
         CUADRE_REPOSITORY,
         CalculadoraGananciasService,
-        CalculadoraMontoEsperadoService, // Exportar para uso en lotes
+        CalculadoraMontoEsperadoService,
+        ActualizadorCuadresVendedorService,
         Modelo6040Strategy,
         Modelo5050CascadaStrategy,
     ],

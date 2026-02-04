@@ -15,6 +15,7 @@ import {
     ICuadreRepository,
     CUADRE_REPOSITORY,
 } from '../../../cuadres/domain/cuadre.repository.interface';
+import { ActualizadorCuadresVendedorService } from '../../../cuadres/domain/actualizador-cuadres-vendedor.service';
 import { ActivarCuadreCommand } from '../../../cuadres/application/commands';
 import { StockUltimaTandaAgotadoEvent } from '../../../mini-cuadres/application/events';
 import { EnviarNotificacionCommand } from '../../../notificaciones/application/commands';
@@ -22,30 +23,32 @@ import { EnviarNotificacionCommand } from '../../../notificaciones/application/c
 /**
  * Handler del evento VentaAprobada
  * Según sección 23 del documento
- * 
+ *
  * Acciones:
  * 1. Actualizar stock de tanda (ya reducido temporalmente, confirmar)
  * 2. Actualizar dinero recaudado del lote
- * 3. Verificar trigger de cuadre (dinero o %)
- * 4. Si stock <= 25%: Enviar notificación
- * 5. Si inversión recuperada: Enviar notificación
- * 6. Si última tanda llega a 0: Activar mini-cuadre
+ * 3. NUEVO: Actualizar montoEsperado del cuadre (ganancias + deuda equipamiento)
+ * 4. Verificar trigger de cuadre (dinero o %)
+ * 5. Si stock <= 25%: Enviar notificación
+ * 6. Si inversión recuperada: Enviar notificación
+ * 7. Si última tanda llega a 0: Activar mini-cuadre
  */
 @EventsHandler(VentaAprobadaEvent)
 export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
-  private readonly logger = new Logger(VentaAprobadaHandler.name);
+    private readonly logger = new Logger(VentaAprobadaHandler.name);
 
-  constructor(
-    @Inject(LOTE_REPOSITORY)
-    private readonly loteRepository: ILoteRepository,
-    @Inject(TANDA_REPOSITORY)
-    private readonly tandaRepository: ITandaRepository,
-    @Inject(CUADRE_REPOSITORY)
-    private readonly cuadreRepository: ICuadreRepository,
-    private readonly calculadoraTandas: CalculadoraTandasService,
-    private readonly commandBus: CommandBus,
-    private readonly eventBus: EventBus,
-  ) {}
+    constructor(
+        @Inject(LOTE_REPOSITORY)
+        private readonly loteRepository: ILoteRepository,
+        @Inject(TANDA_REPOSITORY)
+        private readonly tandaRepository: ITandaRepository,
+        @Inject(CUADRE_REPOSITORY)
+        private readonly cuadreRepository: ICuadreRepository,
+        private readonly calculadoraTandas: CalculadoraTandasService,
+        private readonly actualizadorCuadres: ActualizadorCuadresVendedorService, // NUEVO
+        private readonly commandBus: CommandBus,
+        private readonly eventBus: EventBus,
+    ) {}
 
     async handle(event: VentaAprobadaEvent): Promise<void> {
         this.logInicio(event);
@@ -60,6 +63,9 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
             if (!contexto) return;
 
             const { lote, tanda, triggerResult, dineroRecaudado } = contexto;
+
+            // NUEVO: Actualizar montoEsperado del cuadre de esta tanda
+            await this.actualizarMontoEsperadoCuadre(tanda.id);
 
             await this.manejarCuadre(triggerResult, tanda);
             await this.manejarStockBajo(triggerResult, tanda, event.vendedorId);
@@ -79,12 +85,14 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
             throw error;
         }
     }
+
     private logInicio(event: VentaAprobadaEvent): void {
         this.logger.log(
             `Procesando VentaAprobadaEvent: Venta ${event.ventaId}, ` +
             `Lote ${event.loteId}, Monto $${event.montoTotal.toFixed(2)}`,
         );
     }
+
     private async obtenerContexto(event: VentaAprobadaEvent) {
         const lote = await this.loteRepository.findById(event.loteId);
         const tanda = await this.tandaRepository.findById(event.tandaId);
@@ -110,6 +118,42 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
 
         return { lote, tanda, triggerResult, dineroRecaudado };
     }
+
+    /**
+     * NUEVO: Actualiza el montoEsperado del cuadre cuando se aprueba una venta
+     * Esto asegura que las ganancias se reflejen correctamente
+     */
+    private async actualizarMontoEsperadoCuadre(
+        tandaId: string,
+    ): Promise<void> {
+        try {
+            // Obtener el cuadre de esta tanda
+            const cuadre = await this.cuadreRepository.findByTandaId(tandaId);
+
+            if (!cuadre) {
+                this.logger.debug(`No hay cuadre para tanda ${tandaId}`);
+                return;
+            }
+
+            // Actualizar usando el servicio de actualización
+            const resultado = await this.actualizadorCuadres.actualizarPorVentaAprobada(
+                cuadre.id,
+            );
+
+            if (resultado?.actualizado) {
+                this.logger.log(
+                    `MontoEsperado actualizado para cuadre ${cuadre.id}: ` +
+                    `$${resultado.montoAnterior.toFixed(2)} → $${resultado.montoNuevo.toFixed(2)}`,
+                );
+            }
+        } catch (error) {
+            // Log del error pero no bloquear el flujo de la venta
+            this.logger.error(
+                `Error actualizando montoEsperado del cuadre: ${error}`,
+            );
+        }
+    }
+
     private async manejarCuadre(triggerResult: any, tanda: any): Promise<void> {
         if (!triggerResult.debeDisparar) return;
 
@@ -125,6 +169,7 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
             this.logger.log(`Cuadre ${cuadre.id} activado para tanda ${tanda.numero}`);
         }
     }
+
     private async manejarStockBajo(
         triggerResult: any,
         tanda: any,
@@ -146,6 +191,7 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
             ),
         );
     }
+
     private async manejarInversionRecuperada(
         lote: any,
         dineroRecaudado: Decimal,
@@ -174,6 +220,7 @@ export class VentaAprobadaHandler implements IEventHandler<VentaAprobadaEvent> {
             ),
         );
     }
+
     private async manejarFinalizacionTanda(
         lote: any,
         tanda: any,

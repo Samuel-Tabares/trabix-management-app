@@ -19,6 +19,7 @@ import { EquipamientoEventHandlers } from './application/events';
 
 // Related modules
 import { UsuariosModule } from '../usuarios/usuarios.module';
+import { CuadresModule } from '../cuadres/cuadres.module';
 
 /**
  * Módulo de Equipamiento
@@ -35,6 +36,11 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
  * - Deudas por daños
  * - Deudas por pérdida
  *
+ * INTEGRACIÓN CON CUADRES:
+ * - Al reportar daño/pérdida, se actualiza automáticamente el montoEsperado
+ *   de los cuadres activos del vendedor
+ * - Usa ActualizadorCuadresVendedorService de CuadresModule
+ *
  * Configuración via .env:
  * - MENSUALIDAD_CON_DEPOSITO
  * - MENSUALIDAD_SIN_DEPOSITO
@@ -45,8 +51,9 @@ import { UsuariosModule } from '../usuarios/usuarios.module';
 @Module({
     imports: [
         CqrsModule,
-        ConfigModule, // Necesario para EquipamientoConfigService
+        ConfigModule,
         forwardRef(() => UsuariosModule),
+        forwardRef(() => CuadresModule),
     ],
     controllers: [EquipamientoController],
     providers: [

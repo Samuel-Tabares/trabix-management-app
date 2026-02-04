@@ -10,6 +10,7 @@ import {
 } from '../../../usuarios/domain/usuario.repository.interface';
 import { EquipamientoEntity } from '../../domain/equipamiento.entity';
 import { EquipamientoConfigService } from '../../domain/equipamiento-config.service';
+import { ActualizadorCuadresVendedorService } from '../../../cuadres/domain/actualizador-cuadres-vendedor.service';
 import { DomainException } from '../../../../domain/exceptions/domain.exception';
 
 // ========== SolicitarEquipamientoCommand ==========
@@ -39,7 +40,7 @@ export class SolicitarEquipamientoHandler
     async execute(command: SolicitarEquipamientoCommand): Promise<any> {
         // Verificar que el vendedor existe y está activo
         const vendedor = await this.usuarioRepository.findById(command.vendedorId);
-        if (!vendedor || vendedor.estado !== 'ACTIVO') {
+        if (vendedor?.estado !== 'ACTIVO') {
             throw new DomainException('EQU_005', 'Vendedor no encontrado o no activo');
         }
 
@@ -126,6 +127,7 @@ export class ActivarEquipamientoHandler
 // ========== ReportarDanoCommand ==========
 // Ejecutado por: ADMIN
 // Solo aumenta la deuda, NO cambia el estado
+// Actualiza cuadres del vendedor después de reportar
 
 export class ReportarDanoCommand implements ICommand {
     constructor(
@@ -143,6 +145,7 @@ export class ReportarDanoHandler implements ICommandHandler<ReportarDanoCommand>
         @Inject(EQUIPAMIENTO_REPOSITORY)
         private readonly equipamientoRepository: IEquipamientoRepository,
         private readonly equipamientoConfig: EquipamientoConfigService,
+        private readonly actualizadorCuadres: ActualizadorCuadresVendedorService,
     ) {}
 
     async execute(command: ReportarDanoCommand): Promise<any> {
@@ -174,6 +177,19 @@ export class ReportarDanoHandler implements ICommandHandler<ReportarDanoCommand>
             `Admin: ${command.adminId}`,
         );
 
+        // Actualizar cuadres del vendedor para reflejar la nueva deuda
+        try {
+            await this.actualizadorCuadres.actualizarPorCambioDeudaEquipamiento(
+                equipamiento.vendedorId,
+                `Daño reportado: ${command.tipoDano} ($${monto.toFixed(0)})`,
+            );
+        } catch (error) {
+            // Log del error pero no bloquear el reporte de daño
+            this.logger.error(
+                `Error actualizando cuadres después de reportar daño: ${error}`,
+            );
+        }
+
         return danado;
     }
 }
@@ -181,6 +197,7 @@ export class ReportarDanoHandler implements ICommandHandler<ReportarDanoCommand>
 // ========== ReportarPerdidaCommand ==========
 // Ejecutado por: ADMIN
 // Pérdida total del equipamiento (nevera + pijama)
+// Actualiza cuadres del vendedor después de reportar
 
 export class ReportarPerdidaCommand implements ICommand {
     constructor(
@@ -197,6 +214,7 @@ export class ReportarPerdidaHandler implements ICommandHandler<ReportarPerdidaCo
         @Inject(EQUIPAMIENTO_REPOSITORY)
         private readonly equipamientoRepository: IEquipamientoRepository,
         private readonly equipamientoConfig: EquipamientoConfigService,
+        private readonly actualizadorCuadres: ActualizadorCuadresVendedorService,
     ) {}
 
     async execute(command: ReportarPerdidaCommand): Promise<any> {
@@ -225,6 +243,19 @@ export class ReportarPerdidaHandler implements ICommandHandler<ReportarPerdidaCo
             `Monto: $${monto.toFixed(0)} - ` +
             `Admin: ${command.adminId}`,
         );
+
+        // Actualizar cuadres del vendedor para reflejar la nueva deuda
+        try {
+            await this.actualizadorCuadres.actualizarPorCambioDeudaEquipamiento(
+                equipamiento.vendedorId,
+                `Pérdida total reportada ($${monto.toFixed(0)})`,
+            );
+        } catch (error) {
+            // Log del error pero no bloquear el reporte de pérdida
+            this.logger.error(
+                `Error actualizando cuadres después de reportar pérdida: ${error}`,
+            );
+        }
 
         return perdido;
     }

@@ -1,53 +1,53 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
+import { ConfigModule } from '@nestjs/config';
+
+// Controllers
+import { VentasController } from './controllers/ventas.controller';
 
 // Domain
-import { RegaloPermitidoSpecification } from './domain/regalo-permitido.specification';
-import { VendedorPuedeVenderSpecification } from './domain/vendedor-puede-vender.specification';
-import { CalculadoraPreciosVentaService } from './domain/calculadora-precios-venta.service';
 import { VENTA_REPOSITORY } from './domain/venta.repository.interface';
 
 // Infrastructure
 import { PrismaVentaRepository } from './infrastructure/prisma-venta.repository';
 
-// Application - Commands, Queries, Events
+// Application
 import { VentaCommandHandlers } from './application/commands';
 import { VentaQueryHandlers } from './application/queries';
 import { VentaEventHandlers } from './application/events';
 
-// Controllers
-import { VentasController } from './controllers/ventas.controller';
-
-// Módulos necesarios
-import { UsuariosModule } from '../usuarios/usuarios.module';
+// Related modules
 import { LotesModule } from '../lotes/lotes.module';
-import { CuadresModule } from '../cuadres/cuadres.module';
 import { NotificacionesModule } from '../notificaciones/notificaciones.module';
+import { CuadresModule } from '../cuadres/cuadres.module'; // NUEVO
 
 /**
  * Módulo de Ventas
- * Según sección 6 del documento
+ * Según sección 5 del documento
  *
- * Responsabilidades:
- * - Registro de ventas al detal
- * - Aprobación/Rechazo de ventas
- * - Gestión de stock
- * - Validación de regalos
+ * Gestiona:
+ * - Registro de ventas normales
+ * - Aprobación/rechazo de ventas
+ * - Cálculo de precios según tipo
+ * - Integración con tandas y cuadres
  *
- * Flujo de venta:
- * 1. Vendedor registra venta colectiva (PENDIENTE)
- * 2. Stock se reduce temporalmente
- * 3. Admin revisa:
- *    - Si APRUEBA: stock definitivo, genera recaudo
- *    - Si RECHAZA: stock se revierte, venta se elimina
+ * INTEGRACIÓN CON CUADRES:
+ * - Al aprobar una venta, se actualiza el montoEsperado del cuadre
+ * - Usa ActualizadorCuadresVendedorService para mantener sincronizado
+ *
+ * Tipos de venta:
+ * - PROMO: $12,000
+ * - UNIDAD: $8,000
+ * - SIN_LICOR: $7,000
+ * - REGALO: $0
  */
 @Module({
     imports: [
         CqrsModule,
-        UsuariosModule,
-        LotesModule, // Necesario para CalculadoraInversionService (usado en RegaloPermitidoSpecification)
-        forwardRef(() => CuadresModule),
+        ConfigModule,
+        forwardRef(() => LotesModule),
         forwardRef(() => NotificacionesModule),
+        forwardRef(() => CuadresModule), // NUEVO - para ActualizadorCuadresVendedorService
     ],
     controllers: [VentasController],
     providers: [
@@ -56,26 +56,15 @@ import { NotificacionesModule } from '../notificaciones/notificaciones.module';
             provide: VENTA_REPOSITORY,
             useClass: PrismaVentaRepository,
         },
-
-        // Domain Services
-        CalculadoraPreciosVentaService,
-
-        // Specifications
-        VendedorPuedeVenderSpecification,
-        RegaloPermitidoSpecification,
-
         // Command Handlers
         ...VentaCommandHandlers,
-
         // Query Handlers
         ...VentaQueryHandlers,
-
         // Event Handlers
         ...VentaEventHandlers,
     ],
     exports: [
         VENTA_REPOSITORY,
-        CalculadoraPreciosVentaService,
     ],
 })
 export class VentasModule {}

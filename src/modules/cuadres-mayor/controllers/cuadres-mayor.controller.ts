@@ -7,6 +7,8 @@ import {
     HttpCode,
     HttpStatus,
     ParseUUIDPipe,
+    UseGuards,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -16,8 +18,11 @@ import {
     ApiParam,
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../../auth/decorators/roles.decorator';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import { CurrentUser, AuthenticatedUser } from '../../auth/decorators/current-user.decorator';
+import { DomainException } from '../../../domain/exceptions/domain.exception';
 
 // DTOs
 import {
@@ -34,86 +39,111 @@ import {
     ObtenerCuadreMayorQuery,
     ListarCuadresMayorQuery,
 } from '../application/queries';
+
 /**
  * Controlador de Cuadres al Mayor
  * Según sección 20.9 del documento
- * 
+ *
  * Endpoints:
  * - GET /              - Listar cuadres al mayor
  * - GET /:id           - Obtener cuadre al mayor
  * - POST /:id/confirmar - Confirmar cuadre al mayor (admin)
+ *
+ * Permisos:
+ * - Vendedor/Reclutador: solo ve sus propios cuadres al mayor
+ * - Admin: ve todos los cuadres al mayor
  */
 @ApiTags('Cuadres Mayor')
 @ApiBearerAuth('access-token')
 @Controller('cuadres-mayor')
+@UseGuards(AuthGuard('jwt'))
 export class CuadresMayorController {
-  constructor(
-    private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
-  ) {}
+    constructor(
+        private readonly commandBus: CommandBus,
+        private readonly queryBus: QueryBus,
+    ) {}
 
-  /**
-   * GET /cuadres-mayor
-   * Lista cuadres al mayor
-   */
-  @Get()
-  @ApiOperation({ summary: 'Listar cuadres al mayor' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de cuadres al mayor',
-    type: CuadresMayorPaginadosDto,
-  })
-  async listar(
-    @Query() queryDto: QueryCuadresMayorDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<CuadresMayorPaginadosDto> {
-    // Si no es admin, solo ve sus propios cuadres
-    if (user.rol !== 'ADMIN') {
-      queryDto.vendedorId = user.id;
+    /**
+     * GET /cuadres-mayor
+     * Lista cuadres al mayor
+     */
+    @Get()
+    @ApiOperation({ summary: 'Listar cuadres al mayor' })
+    @ApiResponse({
+        status: 200,
+        description: 'Lista de cuadres al mayor',
+        type: CuadresMayorPaginadosDto,
+    })
+    async listar(
+        @Query() queryDto: QueryCuadresMayorDto,
+        @CurrentUser() user: AuthenticatedUser,
+    ): Promise<CuadresMayorPaginadosDto> {
+        if (!user) throw new UnauthorizedException();
+
+        // Si no es admin, solo ve sus propios cuadres
+        if (user.rol !== 'ADMIN') {
+            queryDto.vendedorId = user.id;
+        }
+        return this.queryBus.execute(new ListarCuadresMayorQuery(queryDto));
     }
-    return this.queryBus.execute(new ListarCuadresMayorQuery(queryDto));
-  }
 
-  /**
-   * GET /cuadres-mayor/:id
-   * Obtiene un cuadre al mayor por ID
-   */
-  @Get(':id')
-  @ApiOperation({ summary: 'Obtener cuadre al mayor' })
-  @ApiParam({ name: 'id', description: 'ID del cuadre al mayor' })
-  @ApiResponse({
-    status: 200,
-    description: 'Datos del cuadre al mayor',
-    type: CuadreMayorResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Cuadre no encontrado' })
-  async obtener(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CuadreMayorResponseDto> {
-    return this.queryBus.execute(new ObtenerCuadreMayorQuery(id));
-  }
+    /**
+     * GET /cuadres-mayor/:id
+     * Obtiene un cuadre al mayor por ID
+     */
+    @Get(':id')
+    @ApiOperation({ summary: 'Obtener cuadre al mayor' })
+    @ApiParam({ name: 'id', description: 'ID del cuadre al mayor' })
+    @ApiResponse({
+        status: 200,
+        description: 'Datos del cuadre al mayor',
+        type: CuadreMayorResponseDto,
+    })
+    @ApiResponse({ status: 404, description: 'Cuadre no encontrado' })
+    async obtener(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() user: AuthenticatedUser,
+    ): Promise<CuadreMayorResponseDto> {
+        if (!user) throw new UnauthorizedException();
 
-  /**
-   * POST /cuadres-mayor/:id/confirmar
-   * Confirma un cuadre al mayor (admin)
-   */
-  @Post(':id/confirmar')
-  @Roles('ADMIN')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Confirmar cuadre al mayor (admin)' })
-  @ApiParam({ name: 'id', description: 'ID del cuadre al mayor' })
-  @ApiResponse({
-    status: 200,
-    description: 'Cuadre confirmado',
-    type: CuadreMayorResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Cuadre no encontrado' })
-  @ApiResponse({ status: 409, description: 'El cuadre no está pendiente' })
-  async confirmar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() admin: AuthenticatedUser,
-  ): Promise<CuadreMayorResponseDto> {
-    await this.commandBus.execute(new ConfirmarCuadreMayorCommand(id, admin.id));
-    return this.queryBus.execute(new ObtenerCuadreMayorQuery(id));
-  }
+        const cuadre = await this.queryBus.execute(new ObtenerCuadreMayorQuery(id));
+
+        // Verificar acceso: admin o dueño del cuadre
+        if (user.rol !== 'ADMIN' && cuadre.vendedorId !== user.id) {
+            throw new DomainException(
+                'CMA_003',
+                'Cuadre al mayor no encontrado',
+                { cuadreMayorId: id },
+            );
+        }
+
+        return cuadre;
+    }
+
+    /**
+     * POST /cuadres-mayor/:id/confirmar
+     * Confirma un cuadre al mayor (admin)
+     */
+    @Post(':id/confirmar')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Confirmar cuadre al mayor (admin)' })
+    @ApiParam({ name: 'id', description: 'ID del cuadre al mayor' })
+    @ApiResponse({
+        status: 200,
+        description: 'Cuadre confirmado',
+        type: CuadreMayorResponseDto,
+    })
+    @ApiResponse({ status: 404, description: 'Cuadre no encontrado' })
+    @ApiResponse({ status: 409, description: 'El cuadre no está pendiente' })
+    async confirmar(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<CuadreMayorResponseDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        await this.commandBus.execute(new ConfirmarCuadreMayorCommand(id, admin.id));
+        return this.queryBus.execute(new ObtenerCuadreMayorQuery(id));
+    }
 }
