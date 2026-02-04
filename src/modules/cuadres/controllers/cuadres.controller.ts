@@ -56,8 +56,8 @@ import {
  * - POST /:id/confirmar - Confirmar cuadre exitoso (admin)
  *
  * Permisos:
- * - Vendedor/Reclutador: solo ve sus propios cuadres
- * - Admin: ve todos los cuadres
+ * - Vendedor/Reclutador: solo ve sus propios cuadres en estado PENDIENTE o EXITOSO
+ * - Admin: ve todos los cuadres en cualquier estado
  */
 @ApiTags('Cuadres')
 @ApiBearerAuth('access-token')
@@ -72,6 +72,10 @@ export class CuadresController {
     /**
      * GET /cuadres
      * Lista cuadres con filtros y paginación
+     *
+     * REGLA DE VISIBILIDAD:
+     * - Admin: puede ver todos los estados
+     * - Vendedor/Reclutador: solo ve PENDIENTE y EXITOSO (NO ve INACTIVO)
      */
     @Get()
     @ApiOperation({ summary: 'Listar cuadres' })
@@ -86,16 +90,48 @@ export class CuadresController {
     ): Promise<CuadresPaginadosDto> {
         if (!user) throw new UnauthorizedException();
 
-        // Si no es admin, solo ve sus propios cuadres
+        // Si no es admin, aplicar restricciones
         if (user.rol !== 'ADMIN') {
+            // Solo ve sus propios cuadres
             queryDto.vendedorId = user.id;
+
+            // Si el vendedor intenta filtrar por INACTIVO, retornar vacío
+            // ya que no tiene permiso de ver cuadres inactivos
+            if (queryDto.estado === 'INACTIVO') {
+                return {
+                    data: [],
+                    total: 0,
+                    hasMore: false,
+                };
+            }
         }
-        return this.queryBus.execute(new ListarCuadresQuery(queryDto));
+
+        const resultado = await this.queryBus.execute(new ListarCuadresQuery(queryDto));
+
+        // Para vendedores, filtrar cuadres INACTIVO del resultado
+        // (esto cubre el caso donde no se especificó filtro de estado)
+        if (user.rol !== 'ADMIN') {
+            const cuadresFiltrados = resultado.data.filter(
+                (c: CuadreResponseDto) => c.estado !== 'INACTIVO',
+            );
+            return {
+                data: cuadresFiltrados,
+                total: cuadresFiltrados.length,
+                hasMore: false, // Simplificado ya que filtramos en memoria
+                nextCursor: undefined,
+            };
+        }
+
+        return resultado;
     }
 
     /**
      * GET /cuadres/:id
      * Obtiene un cuadre por ID
+     *
+     * VERIFICACIÓN DE ACCESO:
+     * - Admin: puede ver cualquier cuadre
+     * - Vendedor: solo puede ver sus propios cuadres en estado PENDIENTE o EXITOSO
      */
     @Get(':id')
     @ApiOperation({ summary: 'Obtener cuadre' })
@@ -114,18 +150,19 @@ export class CuadresController {
 
         const cuadre = await this.queryBus.execute(new ObtenerCuadreQuery(id));
 
-        // Verificar acceso: admin o dueño del cuadre (a través del lote)
-        // El cuadre pertenece a una tanda, que pertenece a un lote, que tiene un vendedor
+        // Verificar acceso para usuarios no admin
         if (user.rol !== 'ADMIN') {
-            // Necesitamos verificar que el vendedor del lote sea el usuario actual
-            // El cuadre.tanda.lote.vendedorId debería coincidir con user.id
-            // Como el DTO no incluye vendedorId directamente, usamos el query con filtro
-            const misCuadres = await this.queryBus.execute(
-                new ListarCuadresQuery({ vendedorId: user.id, take: 1000 }),
-            );
+            // Verificar que es el dueño del cuadre
+            if (cuadre.vendedorId !== user.id) {
+                throw new DomainException(
+                    'CUA_005',
+                    'Cuadre no encontrado',
+                    { cuadreId: id },
+                );
+            }
 
-            const esMiCuadre = misCuadres.data.some((c: CuadreResponseDto) => c.id === id);
-            if (!esMiCuadre) {
+            // Verificar que el estado sea visible para el vendedor
+            if (cuadre.estado === 'INACTIVO') {
                 throw new DomainException(
                     'CUA_005',
                     'Cuadre no encontrado',

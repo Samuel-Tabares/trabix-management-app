@@ -41,11 +41,12 @@ import {
  *
  * Endpoints:
  * - GET /lote/:loteId    - Obtener mini-cuadre de lote
+ * - GET /:id             - Obtener mini-cuadre por ID
  * - POST /:id/confirmar  - Confirmar mini-cuadre (admin)
  *
  * Permisos:
- * - Vendedor/Reclutador: solo ve el mini-cuadre de sus propios lotes
- * - Admin: ve todos los mini-cuadres
+ * - Vendedor/Reclutador: solo ve el mini-cuadre de sus propios lotes en estado PENDIENTE o EXITOSO
+ * - Admin: ve todos los mini-cuadres en cualquier estado
  */
 @ApiTags('Mini-Cuadres')
 @ApiBearerAuth('access-token')
@@ -60,6 +61,10 @@ export class MiniCuadresController {
     /**
      * GET /mini-cuadres/lote/:loteId
      * Obtiene el mini-cuadre de un lote
+     *
+     * REGLA DE VISIBILIDAD:
+     * - Admin: puede ver cualquier estado
+     * - Vendedor: solo puede ver PENDIENTE y EXITOSO (NO ve INACTIVO)
      */
     @Get('lote/:loteId')
     @ApiOperation({ summary: 'Obtener mini-cuadre de lote' })
@@ -80,10 +85,19 @@ export class MiniCuadresController {
             new ObtenerMiniCuadrePorLoteQuery(loteId),
         );
 
-        // Verificar acceso: admin o dueño del lote
+        // Verificar acceso para usuarios no admin
         if (user.rol !== 'ADMIN') {
-            // El mini-cuadre incluye el lote con vendedorId
+            // Verificar que es el dueño del lote
             if (!miniCuadre.lote || miniCuadre.lote.vendedorId !== user.id) {
+                throw new DomainException(
+                    'MCU_005',
+                    'Mini-cuadre no encontrado',
+                    { loteId },
+                );
+            }
+
+            // Verificar que el estado sea visible para el vendedor
+            if (miniCuadre.estado === 'INACTIVO') {
                 throw new DomainException(
                     'MCU_005',
                     'Mini-cuadre no encontrado',
@@ -98,6 +112,10 @@ export class MiniCuadresController {
     /**
      * GET /mini-cuadres/:id
      * Obtiene un mini-cuadre por ID
+     *
+     * REGLA DE VISIBILIDAD:
+     * - Admin: puede ver cualquier estado
+     * - Vendedor: solo puede ver PENDIENTE y EXITOSO (NO ve INACTIVO)
      */
     @Get(':id')
     @ApiOperation({ summary: 'Obtener mini-cuadre por ID' })
@@ -116,9 +134,19 @@ export class MiniCuadresController {
 
         const miniCuadre = await this.queryBus.execute(new ObtenerMiniCuadreQuery(id));
 
-        // Verificar acceso: admin o dueño del lote
+        // Verificar acceso para usuarios no admin
         if (user.rol !== 'ADMIN') {
+            // Verificar que es el dueño del lote
             if (!miniCuadre.lote || miniCuadre.lote.vendedorId !== user.id) {
+                throw new DomainException(
+                    'MCU_005',
+                    'Mini-cuadre no encontrado',
+                    { miniCuadreId: id },
+                );
+            }
+
+            // Verificar que el estado sea visible para el vendedor
+            if (miniCuadre.estado === 'INACTIVO') {
                 throw new DomainException(
                     'MCU_005',
                     'Mini-cuadre no encontrado',

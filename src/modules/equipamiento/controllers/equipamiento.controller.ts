@@ -10,6 +10,7 @@ import {
     ParseUUIDPipe,
     UseGuards,
     UnauthorizedException,
+    NotFoundException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -98,6 +99,8 @@ export class EquipamientoController {
     /**
      * GET /equipamiento/me
      * Obtener mi equipamiento (VENDEDOR)
+     *
+     * CORRECCIÓN: Maneja correctamente el caso cuando no existe equipamiento
      */
     @Get('me')
     @ApiOperation({
@@ -108,10 +111,19 @@ export class EquipamientoController {
     @ApiResponse({ status: 404, description: 'No tiene equipamiento' })
     async obtenerMio(
         @CurrentUser() user: AuthenticatedUser,
-    ): Promise<EquipamientoResponseDto | null> {
+    ): Promise<EquipamientoResponseDto> {
         if (!user) throw new UnauthorizedException();
 
-        return this.queryBus.execute(new ObtenerMiEquipamientoQuery(user.id));
+        const equipamiento = await this.queryBus.execute(
+            new ObtenerMiEquipamientoQuery(user.id),
+        );
+
+        // Manejar caso cuando no existe equipamiento
+        if (!equipamiento) {
+            throw new NotFoundException('No tiene equipamiento activo o solicitado');
+        }
+
+        return equipamiento;
     }
 
     // =============================================
