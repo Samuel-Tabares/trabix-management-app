@@ -1,8 +1,13 @@
 import { CommandHandler, ICommandHandler, ICommand, EventBus, CommandBus } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
 import {
     ICuadreMayorRepository,
     CUADRE_MAYOR_REPOSITORY,
+    ConfirmarCuadreMayorTransactionData,
+    TandaParaProcesar,
+    CuadreParaCerrar,
+    DistribucionMontoLote,
 } from '../../domain/cuadre-mayor.repository.interface';
 import {
     ICuadreRepository,
@@ -37,13 +42,16 @@ export class ConfirmarCuadreMayorCommand implements ICommand {
  * Handler del comando ConfirmarCuadreMayor
  * Según sección 8.10 del documento
  *
- * Pasos:
+ * Pasos (ahora en transacción atómica):
  * 1. Validar que el cuadre está PENDIENTE
- * 2. Consumir stock de las tandas afectadas
- * 3. Cerrar cuadres normales cubiertos
- * 4. Si hay lote forzado: activar y finalizar inmediatamente
- * 5. Actualizar dinero recaudado y transferido de lotes
- * 6. Marcar cuadre como EXITOSO
+ * 2. Preparar datos para la transacción
+ * 3. Ejecutar transacción atómica:
+ *    - Consumir stock de las tandas afectadas
+ *    - Cerrar cuadres normales cubiertos
+ *    - Si hay lote forzado: activar y finalizar inmediatamente
+ *    - Actualizar dinero recaudado y transferido de lotes (PRORRATEADO)
+ *    - Marcar cuadre como EXITOSO
+ * 4. Emitir eventos post-transacción
  */
 @CommandHandler(ConfirmarCuadreMayorCommand)
 export class ConfirmarCuadreMayorHandler
@@ -68,7 +76,7 @@ export class ConfirmarCuadreMayorHandler
     async execute(command: ConfirmarCuadreMayorCommand): Promise<unknown> {
         const { cuadreMayorId } = command;
 
-        // Buscar el cuadre al mayor
+        // ========== 1. VALIDACIONES INICIALES ==========
         const cuadreMayor = await this.cuadreMayorRepository.findById(cuadreMayorId);
         if (!cuadreMayor) {
             throw new DomainException('CMA_002', 'Cuadre al mayor no encontrado', { cuadreMayorId });
@@ -82,76 +90,71 @@ export class ConfirmarCuadreMayorHandler
             );
         }
 
-        // Parsear tandas afectadas con tipo seguro
+        // Parsear valores del cuadre mayor
         const tandasAfectadas = this.parseTandasAfectadas(cuadreMayor.tandasAfectadas);
+        const ingresoBruto = parseDecimalValue(cuadreMayor.ingresoBruto);
+        const montoTotalAdmin = parseDecimalValue(cuadreMayor.montoTotalAdmin);
 
-        // Helper: procesar tanda agotada
-        const procesarTandaAgotada = async (
-            tandaId: string,
-            loteId: string,
-            numeroTanda: number,
-        ): Promise<void> => {
-            const tandaActualizada = await this.tandaRepository.findById(tandaId);
-            if (tandaActualizada?.estado !== 'EN_CASA' || tandaActualizada.stockActual > 0) {
-                return;
-            }
+        // ========== 2. PREPARAR DATOS PARA TRANSACCIÓN ==========
 
-            const lote = await this.loteRepository.findById(loteId);
-            if (!lote) {
-                return;
-            }
+        // 2.1 Preparar tandas a procesar
+        const tandasParaProcesar = await this.prepararTandasParaProcesar(tandasAfectadas);
 
-            const esUltimaTanda = numeroTanda === lote.tandas.length;
+        // 2.2 Preparar cuadres a cerrar
+        const cuadresParaCerrar = await this.prepararCuadresParaCerrar(
+            cuadreMayor.lotesInvolucradosIds,
+        );
 
-            if (esUltimaTanda) {
-                this.logger.log(`Última tanda ${numeroTanda} con stock 0. Activando mini-cuadre.`);
-                this.eventBus.publish(new StockUltimaTandaAgotadoEvent(tandaId, loteId));
-            } else {
-                await this.tandaRepository.finalizar(tandaId);
-                this.logger.log(`Tanda ${tandaId} finalizada por stock agotado`);
-            }
-        };
+        // 2.3 Calcular distribución prorrateada por lote
+        const distribucionPorLote = this.calcularDistribucionPorLote(
+            tandasAfectadas,
+            ingresoBruto,
+            montoTotalAdmin,
+        );
 
-        // 1. Consumir stock de tandas afectadas
-        for (const tanda of tandasAfectadas) {
-            await this.tandaRepository.consumirStock(tanda.tandaId, tanda.cantidadStockConsumido);
-            this.logger.log(`Stock consumido: Tanda ${tanda.tandaId} - ${tanda.cantidadStockConsumido} unidades`);
-            await procesarTandaAgotada(tanda.tandaId, tanda.loteId, tanda.numeroTanda);
-        }
-
-        // Helper: cerrar cuadres cubiertos
-        const cuadresCerradosIds: string[] = [];
-        const cerrarCuadresDeLote = async (loteId: string): Promise<void> => {
-            const cuadresLote = await this.cuadreRepository.findByLoteId(loteId);
-            for (const cuadre of cuadresLote) {
-                if (cuadre.estado === 'INACTIVO' || cuadre.estado === 'PENDIENTE') {
-                    const montoTotalAdmin = parseDecimalValue(cuadreMayor.montoTotalAdmin);
-                    await this.cuadreRepository.cerrarPorMayor(cuadre.id, cuadreMayorId, montoTotalAdmin);
-                    cuadresCerradosIds.push(cuadre.id);
-                    this.logger.log(`Cuadre cerrado por mayor: ${cuadre.id}`);
-                }
-            }
-        };
-
-        // 2. Cerrar cuadres normales cubiertos
-        for (const loteId of cuadreMayor.lotesInvolucradosIds) {
-            await cerrarCuadresDeLote(loteId);
-        }
-
-        // 3. Procesar lote forzado si existe
+        // 2.4 Preparar lote forzado si existe
+        let loteForzadoData: ConfirmarCuadreMayorTransactionData['loteForzado'] = null;
         if (cuadreMayor.loteForzadoId) {
-            const loteForzadoId = cuadreMayor.loteForzadoId;
-            await this.loteRepository.activar(loteForzadoId);
-            const loteForzado = await this.loteRepository.findById(loteForzadoId);
-
+            const loteForzado = await this.loteRepository.findById(cuadreMayor.loteForzadoId);
             if (loteForzado) {
-                for (const tanda of loteForzado.tandas) {
-                    await this.tandaRepository.finalizar(tanda.id);
-                }
-                await this.loteRepository.finalizar(loteForzadoId);
+                loteForzadoData = {
+                    id: loteForzado.id,
+                    tandasIds: loteForzado.tandas.map((t) => t.id),
+                };
+            }
+        }
 
-                // Usar CalculadoraInversionService para calcular el aporte al fondo
-                const aporteFondo = this.calculadoraInversion.calcularAporteFondo(loteForzado.cantidadTrabix);
+        // ========== 3. EJECUTAR TRANSACCIÓN ATÓMICA ==========
+        const transactionData: ConfirmarCuadreMayorTransactionData = {
+            cuadreMayorId,
+            montoTotalAdmin,
+            ingresoBruto,
+            tandasParaProcesar,
+            cuadresParaCerrar,
+            distribucionPorLote,
+            loteForzado: loteForzadoData,
+        };
+
+        const resultado = await this.cuadreMayorRepository.confirmarExitosoTransaccional(
+            transactionData,
+        );
+
+        this.logger.log(
+            `Cuadre al mayor confirmado: ${cuadreMayorId} - ` +
+            `Admin: $${montoTotalAdmin.toFixed(2)} - ` +
+            `Cuadres cerrados: ${resultado.cuadresCerradosIds.length} - ` +
+            `Lotes actualizados: ${distribucionPorLote.length}`,
+        );
+
+        // ========== 4. ACCIONES POST-TRANSACCIÓN (eventos y comandos) ==========
+
+        // 4.1 Registrar aporte al fondo por lote forzado
+        if (cuadreMayor.loteForzadoId && loteForzadoData) {
+            const loteForzado = await this.loteRepository.findById(cuadreMayor.loteForzadoId);
+            if (loteForzado) {
+                const aporteFondo = this.calculadoraInversion.calcularAporteFondo(
+                    loteForzado.cantidadTrabix,
+                );
                 await this.commandBus.execute(
                     new RegistrarEntradaFondoCommand(
                         aporteFondo,
@@ -159,41 +162,142 @@ export class ConfirmarCuadreMayorHandler
                         loteForzado.id,
                     ),
                 );
-                this.logger.log(`Entrada registrada en fondo de recompensas por lote forzado: $${aporteFondo.toFixed(2)}`);
+                this.logger.log(
+                    `Entrada registrada en fondo de recompensas por lote forzado: $${aporteFondo.toFixed(2)}`,
+                );
             }
-            this.logger.log(`Lote forzado finalizado: ${loteForzadoId}`);
         }
 
-        // 4. Actualizar dinero recaudado y transferido de lotes involucrados
-        const ingresoBruto = parseDecimalValue(cuadreMayor.ingresoBruto);
-        const montoTotalAdmin = parseDecimalValue(cuadreMayor.montoTotalAdmin);
-
-        for (const loteId of cuadreMayor.lotesInvolucradosIds) {
-            await this.loteRepository.actualizarRecaudado(loteId, ingresoBruto);
-            await this.loteRepository.actualizarTransferido(loteId, montoTotalAdmin);
+        // 4.2 Emitir eventos para últimas tandas con stock agotado
+        for (const tandaAgotada of resultado.tandasConStockAgotadoUltimas) {
+            this.logger.log(
+                `Última tanda con stock 0. Activando mini-cuadre para tanda ${tandaAgotada.tandaId}`,
+            );
+            this.eventBus.publish(
+                new StockUltimaTandaAgotadoEvent(tandaAgotada.tandaId, tandaAgotada.loteId),
+            );
         }
 
-        // 5. Confirmar cuadre al mayor
-        const cuadreConfirmado = await this.cuadreMayorRepository.confirmarExitoso(
-            cuadreMayorId,
-            cuadresCerradosIds,
-        );
-
-        this.logger.log(
-            `Cuadre al mayor confirmado: ${cuadreMayorId} - Admin: $${montoTotalAdmin.toFixed(2)} - Cuadres cerrados: ${cuadresCerradosIds.length}`,
-        );
-
+        // 4.3 Emitir evento principal de cuadre exitoso
         this.eventBus.publish(
             new CuadreMayorExitosoEvent(
                 cuadreMayorId,
                 cuadreMayor.vendedorId,
                 cuadreMayor.lotesInvolucradosIds,
-                cuadresCerradosIds,
+                resultado.cuadresCerradosIds,
                 cuadreMayor.loteForzadoId,
             ),
         );
 
-        return cuadreConfirmado;
+        return resultado.cuadreMayor;
+    }
+
+    /**
+     * Prepara la información de tandas necesaria para la transacción
+     */
+    private async prepararTandasParaProcesar(
+        tandasAfectadas: TandaAfectada[],
+    ): Promise<TandaParaProcesar[]> {
+        const tandasParaProcesar: TandaParaProcesar[] = [];
+
+        for (const tanda of tandasAfectadas) {
+            // Obtener estado actual de la tanda
+            const tandaActual = await this.tandaRepository.findById(tanda.tandaId);
+            if (!tandaActual) {
+                this.logger.warn(`Tanda no encontrada: ${tanda.tandaId}`);
+                continue;
+            }
+
+            // Obtener lote para saber si es última tanda
+            const lote = await this.loteRepository.findById(tanda.loteId);
+            const esUltimaTanda = lote
+                ? tanda.numeroTanda === lote.tandas.length
+                : false;
+
+            tandasParaProcesar.push({
+                tandaId: tanda.tandaId,
+                loteId: tanda.loteId,
+                numeroTanda: tanda.numeroTanda,
+                cantidadStockConsumido: tanda.cantidadStockConsumido,
+                stockRestanteDespuesConsumo: tandaActual.stockActual - tanda.cantidadStockConsumido,
+                esUltimaTanda,
+                estadoActual: tandaActual.estado,
+            });
+        }
+
+        return tandasParaProcesar;
+    }
+
+    /**
+     * Prepara la lista de cuadres normales que deben cerrarse
+     */
+    private async prepararCuadresParaCerrar(
+        lotesInvolucradosIds: string[],
+    ): Promise<CuadreParaCerrar[]> {
+        const cuadresParaCerrar: CuadreParaCerrar[] = [];
+
+        for (const loteId of lotesInvolucradosIds) {
+            const cuadresLote = await this.cuadreRepository.findByLoteId(loteId);
+
+            for (const cuadre of cuadresLote) {
+                // Solo cerrar cuadres INACTIVOS o PENDIENTES
+                if (cuadre.estado === 'INACTIVO' || cuadre.estado === 'PENDIENTE') {
+                    cuadresParaCerrar.push({
+                        cuadreId: cuadre.id,
+                        loteId,
+                    });
+                }
+            }
+        }
+
+        return cuadresParaCerrar;
+    }
+
+    /**
+     * Calcula la distribución de montos prorrateada por lote
+     * basándose en el stock consumido de cada lote
+     */
+    private calcularDistribucionPorLote(
+        tandasAfectadas: TandaAfectada[],
+        ingresoBruto: Decimal,
+        montoTotalAdmin: Decimal,
+    ): DistribucionMontoLote[] {
+        // Agrupar stock consumido por lote
+        const stockPorLote = new Map<string, number>();
+
+        for (const tanda of tandasAfectadas) {
+            const actual = stockPorLote.get(tanda.loteId) || 0;
+            stockPorLote.set(tanda.loteId, actual + tanda.cantidadStockConsumido);
+        }
+
+        // Calcular total de stock consumido
+        const stockTotal = [...stockPorLote.values()].reduce((a, b) => a + b, 0);
+
+        if (stockTotal === 0) {
+            this.logger.warn('Stock total consumido es 0, no se puede prorratear');
+            return [];
+        }
+
+        // Calcular distribución proporcional
+        const distribucion: DistribucionMontoLote[] = [];
+
+        for (const [loteId, stockConsumido] of stockPorLote) {
+            const proporcion = new Decimal(stockConsumido).div(stockTotal);
+
+            distribucion.push({
+                loteId,
+                stockConsumido,
+                montoRecaudado: ingresoBruto.mul(proporcion),
+                montoTransferido: montoTotalAdmin.mul(proporcion),
+            });
+
+            this.logger.debug(
+                `Prorrateo para lote ${loteId}: ` +
+                `${stockConsumido}/${stockTotal} unidades = ${proporcion.mul(100).toFixed(2)}%`,
+            );
+        }
+
+        return distribucion;
     }
 
     /**
