@@ -8,6 +8,7 @@ build/
 
 # IDE
 .idea/
+*.iml
 .vscode/
 *.swp
 *.swo
@@ -23,10 +24,6 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
-
-# Prisma
-prisma/migrations/*
-!prisma/migrations/.gitkeep
 
 # Docker
 docker/volumes/

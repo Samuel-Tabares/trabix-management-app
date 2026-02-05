@@ -94,13 +94,6 @@ export class UsuarioEntity {
             );
         }
     }
-
-    /**
-     * Obtiene el modelo de negocio en formato legible
-     */
-    get modeloNegocioLegible(): '60_40' | '50_50' {
-        return this.modeloNegocio === 'MODELO_60_40' ? '60_40' : '50_50';
-    }
 }
 
 /**

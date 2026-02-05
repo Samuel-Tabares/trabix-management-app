@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Usuario, EstadoUsuario, Prisma, ModeloNegocio } from '@prisma/client';
+import { Usuario, EstadoUsuario, Prisma } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
