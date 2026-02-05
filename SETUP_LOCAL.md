@@ -1,99 +1,133 @@
-# Configuración Local del Proyecto TRABIX Backend
+# 🛠️ Configuración Local del Proyecto **TRABIX Backend**
 
-## Requisitos Previos
+Esta guía te ayuda a levantar el proyecto en local sin sufrir (o al menos sufrir menos 😅).
 
-- Node.js >= 18.x
-- PostgreSQL 16
-- Redis 7
-- npm o yarn
+---
 
-## Pasos de Instalación
-
-### 1. Instalar dependencias
+## 📦 Instalación de dependencias
 
 ```bash
 npm install
 ```
 
-### 2. Generar cliente de Prisma
+Instala todas las dependencias del proyecto.
+
+---
+
+## 🐳 Servicios necesarios (PostgreSQL + Redis)
+
+```bash
+docker-compose -f docker-compose.test.yml up -d
+```
+
+Levanta los contenedores de **PostgreSQL** y **Redis** para el entorno de pruebas.
+
+---
+
+## 🧬 Prisma
+
+### Generar cliente
 
 ```bash
 npx prisma generate
 ```
 
-### 3. Configurar variables de entorno
-#### en el archivo .env
+Genera el cliente de Prisma.
 
-Editar `.env` con tus valores:
-
-```env
-DATABASE_URL="postgresql://usuario:password@localhost:5432/trabix_db"
-JWT_SECRET="tu-jwt-secret-seguro"
-JWT_REFRESH_SECRET="tu-refresh-secret-seguro"
-REDIS_URL="redis://localhost:6379"
-```
-
-### 4. Ejecutar migraciones
+### Aplicar migraciones (desarrollo)
 
 ```bash
 npx prisma migrate dev
 ```
 
-### 5. Ejecutar seed (opcional)
+Aplica las migraciones a la base de datos local.
+
+### Aplicar migraciones (fallback)
 
 ```bash
-npx prisma db seed
+npx prisma migrate deploy
 ```
 
-### 6. Iniciar en modo desarrollo
+Útil si `migrate dev` falla o estás en un entorno más cercano a producción.
+
+### Reset completo de la base de datos ⚠️
+
+```bash
+npx prisma migrate reset
+```
+
+* Elimina **toda** la base de datos
+* Vuelve a aplicar migraciones
+* Ejecuta los **seeds** automáticamente
+
+---
+
+## ✅ Verificación de TypeScript
+
+```bash
+npx tsc --noEmit
+```
+
+Verifica errores de TypeScript sin generar archivos.
+
+---
+
+## 🗄️ Acceso directo a PostgreSQL
+
+```bash
+psql -h localhost -p 5433 -U postgres -d trabix_test
+```
+
+**Password:** `testpassword`
+
+### Comandos útiles dentro de psql
+
+```sql
+\dt                      -- ver tablas
+\d nombre_tabla           -- ver estructura de una tabla
+SELECT * FROM nombre_tabla; -- ver datos
+```
+
+---
+
+## 🚀 Ejecutar la aplicación en desarrollo
 
 ```bash
 npm run start:dev
 ```
 
-## Estructura del Proyecto
+Levanta el backend en modo desarrollo con hot-reload.
 
-```
-src/
-├── modules/         # 13 módulos de negocio (toda la lógica aquí)
-│   ├── auth/
-│   ├── usuarios/
-│   ├── lotes/
-│   ├── ventas/
-│   ├── cuadres/
-│   ├── ventas-mayor/
-│   ├── cuadres-mayor/
-│   ├── mini-cuadres/
-│   ├── equipamiento/
-│   ├── fondo-recompensas/
-│   ├── notificaciones/
-│   ├── admin/
-│   └── health/
-├── domain/          # Clases base compartidas, value objects, excepciones
-├── application/     # Clases base para CQRS
-├── infrastructure/  # Database, cache, events, queues
-├── presentation/    # HTTP filters, guards, interceptors
-├── config/          # Configuración de la aplicación
-└── shared/          # Utilidades compartidas
-```
+---
 
-## Comandos Útiles
+## 🌱 Seeds
+
+### Prerrequisito
 
 ```bash
-# Desarrollo
-npm run start:dev
-
-# Producción
-npm run build
-npm run start:prod
-
-# Tests
-npm run test
-npm run test:e2e
-npm run test:cov
-
-# Prisma
-npx prisma studio    # UI para ver/editar datos
-npx prisma migrate   # Crear migración
-npx prisma generate  # Regenerar cliente
+npx ts-node prisma/seeds/test-scenarios.seed.ts
 ```
+
+Este seed se ejecuta automáticamente al hacer `prisma migrate reset`.
+
+---
+
+## 🧪 Tests E2E
+
+### Ejecutar todos los escenarios
+
+```bash
+npm run test:e2e -- --testPathPattern=all-scenarios
+```
+
+### Ejecutar tests usando `.env.test`
+
+```bash
+NODE_ENV=test npx dotenv-cli -e .env.test -- npm run test:e2e -- --testPathPattern=all-scenarios
+```
+
+Usa esta opción para forzar conexiones y variables del entorno de test.
+
+---
+
+✨ **Tip final:** si algo explota… revisa primero Docker, luego Prisma, y después respira profundo 🧘‍♂️
