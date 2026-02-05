@@ -1,6 +1,5 @@
 // ===========================================
 // TRABIX Backend - Prisma Schema
-// Según sección 19 del documento de especificación
 // ===========================================
 
 generator client {
@@ -13,7 +12,7 @@ datasource db {
 }
 
 // ===========================================
-// ENUMS (Sección 19.1)
+// ENUMS
 // ===========================================
 
 enum Rol {
@@ -138,6 +137,7 @@ model Usuario {
   requiereCambioPassword  Boolean        @default(true)
   rol                     Rol            @default(VENDEDOR)
   estado                  EstadoUsuario  @default(ACTIVO)
+  modeloNegocio           ModeloNegocio  @default(MODELO_60_40)
   
   reclutadorId            String?
   reclutador              Usuario?       @relation("Reclutamiento", fields: [reclutadorId], references: [id])
@@ -342,12 +342,10 @@ model CuadreMayor {
   modalidad                       ModalidadVentaMayor
   estado                          EstadoCuadre        @default(PENDIENTE)
   
-  // Campos del registro (7.6)
   cantidadUnidades                Int
   precioUnidad                    Decimal             @db.Decimal(12, 2)
   ingresoBruto                    Decimal             @db.Decimal(12, 2)
   
-  // Desglose de dinero (7.6)
   deudasSaldadas                  Decimal             @default(0) @db.Decimal(12, 2)
   inversionAdminLotesExistentes   Decimal             @db.Decimal(12, 2)
   inversionAdminLoteForzado       Decimal             @default(0) @db.Decimal(12, 2)
@@ -356,14 +354,11 @@ model CuadreMayor {
   gananciasAdmin                  Decimal             @default(0) @db.Decimal(12, 2)
   gananciasVendedor               Decimal             @default(0) @db.Decimal(12, 2)
   
-  // Evaluación financiera completa (8.3)
   evaluacionFinanciera            Json
   
-  // Totales
   montoTotalAdmin                 Decimal             @db.Decimal(12, 2)
   montoTotalVendedor              Decimal             @db.Decimal(12, 2)
   
-  // Referencias
   lotesInvolucradosIds            String[]
   tandasAfectadas                 Json
   cuadresCerradosIds              String[]
@@ -624,8 +619,6 @@ model IdempotencyKey {
   @@index([expiresAt])
   @@map("idempotency_keys")
 }
-
-// ========== Fondo de Recompensas ==========
 
 model MovimientoFondo {
   id               String   @id @default(uuid())

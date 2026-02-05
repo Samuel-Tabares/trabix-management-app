@@ -1,4 +1,4 @@
-import { Usuario, Rol, EstadoUsuario } from '@prisma/client';
+import { Usuario, Rol, EstadoUsuario, ModeloNegocio } from '@prisma/client';
 
 /**
  * Interface del repositorio de usuarios
@@ -59,8 +59,27 @@ export interface IUsuarioRepository {
 
     /**
      * Crea un nuevo usuario
+     * @deprecated Usar createWithPromocion para garantizar transaccionalidad
      */
     create(data: CreateUsuarioData): Promise<Usuario>;
+
+    /**
+     * Crea un nuevo usuario con promoción de reclutador en una transacción atómica
+     *
+     * Operaciones atómicas:
+     * 1. Si reclutadorIdAPromover está definido, promueve ese usuario a RECLUTADOR
+     * 2. Crea el nuevo usuario con el modeloNegocio calculado
+     *
+     * Si cualquier operación falla, se hace rollback de todoo.
+     *
+     * @param data Datos del usuario a crear (incluyendo modeloNegocio)
+     * @param reclutadorIdAPromover ID del reclutador a promover (si es VENDEDOR)
+     * @returns Usuario creado
+     */
+    createWithPromocion(
+        data: CreateUsuarioData,
+        reclutadorIdAPromover?: string,
+    ): Promise<Usuario>;
 
     /**
      * Actualiza un usuario
@@ -125,6 +144,7 @@ export interface FindAllUsuariosOptions {
         reclutadorId?: string | null;
         search?: string;
         cedula?: number;
+        modeloNegocio?: ModeloNegocio;
     };
     orderBy?: {
         field: 'fechaCreacion' | 'nombre' | 'apellidos' | 'email';
@@ -155,6 +175,7 @@ export interface CreateUsuarioData {
     passwordHash: string;
     reclutadorId?: string | null;
     rol?: Rol;
+    modeloNegocio: ModeloNegocio;
 }
 
 /**

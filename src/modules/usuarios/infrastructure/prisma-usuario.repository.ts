@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { Usuario, EstadoUsuario, Prisma } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { Usuario, EstadoUsuario, Prisma, ModeloNegocio } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import { PrismaService } from '../../../infrastructure/database/prisma/prisma.service';
 import {
@@ -20,6 +20,8 @@ import {
  */
 @Injectable()
 export class PrismaUsuarioRepository implements IUsuarioRepository {
+    private readonly logger = new Logger(PrismaUsuarioRepository.name);
+
     constructor(private readonly prisma: PrismaService) {}
 
     async findById(id: string): Promise<Usuario | null> {
@@ -72,6 +74,10 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
 
         if (where.reclutadorId !== undefined) {
             whereCondition.reclutadorId = where.reclutadorId;
+        }
+
+        if (where.modeloNegocio) {
+            whereCondition.modeloNegocio = where.modeloNegocio;
         }
 
         // Búsqueda exacta por cédula (número)
@@ -335,6 +341,10 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
         return cadena;
     }
 
+    /**
+     * Crea un nuevo usuario (métodoo legacy)
+     * @deprecated Usar createWithPromocion para garantizar transaccionalidad
+     */
     async create(data: CreateUsuarioData): Promise<Usuario> {
         return this.prisma.usuario.create({
             data: {
@@ -344,11 +354,66 @@ export class PrismaUsuarioRepository implements IUsuarioRepository {
                 email: data.email.toLowerCase(),
                 telefono: data.telefono,
                 passwordHash: data.passwordHash,
-                requiereCambioPassword: true, // Siempre true al crear
+                requiereCambioPassword: true,
                 rol: data.rol ?? 'VENDEDOR',
                 estado: 'ACTIVO',
                 reclutadorId: data.reclutadorId ?? null,
+                modeloNegocio: data.modeloNegocio,
             },
+        });
+    }
+
+    /**
+     * Crea un nuevo usuario con promoción de reclutador en una transacción atómica
+     *
+     * Garantiza que:
+     * 1. Si el reclutador debe ser promovido a RECLUTADOR, se hace primero
+     * 2. Luego se crea el usuario
+     * 3. Si cualquier paso falla, se hace rollback completo
+     *
+     * @param data Datos del usuario a crear (incluyendo modeloNegocio)
+     * @param reclutadorIdAPromover ID del reclutador a promover (solo si era VENDEDOR)
+     * @returns Usuario creado
+     */
+    async createWithPromocion(
+        data: CreateUsuarioData,
+        reclutadorIdAPromover?: string,
+    ): Promise<Usuario> {
+        return this.prisma.$transaction(async (tx) => {
+            // Paso 1: Promover reclutador si es necesario
+            if (reclutadorIdAPromover) {
+                await tx.usuario.update({
+                    where: { id: reclutadorIdAPromover },
+                    data: { rol: 'RECLUTADOR' },
+                });
+
+                this.logger.log(
+                    `[TX] Reclutador ${reclutadorIdAPromover} promovido a RECLUTADOR`,
+                );
+            }
+
+            // Paso 2: Crear el nuevo usuario
+            const usuario = await tx.usuario.create({
+                data: {
+                    cedula: data.cedula,
+                    nombre: data.nombre,
+                    apellidos: data.apellidos,
+                    email: data.email.toLowerCase(),
+                    telefono: data.telefono,
+                    passwordHash: data.passwordHash,
+                    requiereCambioPassword: true,
+                    rol: data.rol ?? 'VENDEDOR',
+                    estado: 'ACTIVO',
+                    reclutadorId: data.reclutadorId ?? null,
+                    modeloNegocio: data.modeloNegocio,
+                },
+            });
+
+            this.logger.log(
+                `[TX] Usuario ${usuario.id} (${usuario.email}) creado con modelo ${data.modeloNegocio}`,
+            );
+
+            return usuario;
         });
     }
 
