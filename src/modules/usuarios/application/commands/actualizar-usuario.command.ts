@@ -53,7 +53,7 @@ export class ActualizarUsuarioHandler
     }
 
     // Validar email único si se está actualizando
-    if (data.email && data.email.toLowerCase() !== usuario.email) {
+    if (data.email && data.email.toLowerCase() !== usuario.email.toLowerCase()) {
       const existeEmail = await this.usuarioRepository.existsByEmail(
         data.email,
         usuarioId,
