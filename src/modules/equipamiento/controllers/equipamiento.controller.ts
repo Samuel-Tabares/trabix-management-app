@@ -32,6 +32,8 @@ import {
     QueryEquipamientosDto,
     EquipamientoResponseDto,
     EquipamientosPaginadosDto,
+    PagarDeudaDto,
+    EquipamientoConAdvertenciaDto,
 } from '../application/dto';
 
 // Commands
@@ -41,6 +43,9 @@ import {
     ReportarDanoCommand,
     ReportarPerdidaCommand,
     DevolverEquipamientoCommand,
+    PagarMensualidadCommand,
+    PagarDeudaDanoCommand,
+    PagarDeudaPerdidaCommand,
 } from '../application/commands';
 
 // Queries
@@ -77,6 +82,8 @@ export class EquipamientoController {
      * Solicitar equipamiento (VENDEDOR)
      */
     @Post('solicitar')
+    @UseGuards(RolesGuard)
+    @Roles('VENDEDOR')
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({
         summary: 'Solicitar equipamiento (vendedor)',
@@ -84,6 +91,7 @@ export class EquipamientoController {
     })
     @ApiResponse({ status: 201, type: EquipamientoResponseDto })
     @ApiResponse({ status: 400, description: 'Ya tiene equipamiento activo' })
+    @ApiResponse({ status: 403, description: 'Solo vendedores pueden solicitar equipamiento' })
     async solicitar(
         @Body() dto: SolicitarEquipamientoDto,
         @CurrentUser() user: AuthenticatedUser,
@@ -99,15 +107,16 @@ export class EquipamientoController {
     /**
      * GET /equipamiento/me
      * Obtener mi equipamiento (VENDEDOR)
-     *
-     * CORRECCIÓN: Maneja correctamente el caso cuando no existe equipamiento
      */
     @Get('me')
+    @UseGuards(RolesGuard)
+    @Roles('VENDEDOR')
     @ApiOperation({
         summary: 'Obtener mi equipamiento',
         description: 'Retorna el equipamiento activo del vendedor autenticado',
     })
     @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 403, description: 'Solo vendedores pueden acceder a este endpoint' })
     @ApiResponse({ status: 404, description: 'No tiene equipamiento' })
     async obtenerMio(
         @CurrentUser() user: AuthenticatedUser,
@@ -208,19 +217,25 @@ export class EquipamientoController {
             'Solo aumenta la deuda, no cambia el estado.',
     })
     @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 200, type: EquipamientoConAdvertenciaDto })
     @ApiResponse({ status: 400, description: 'Estado inválido para reportar daño' })
     async reportarDano(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() dto: ReportarDanoDto,
         @CurrentUser() admin: AuthenticatedUser,
-    ): Promise<EquipamientoResponseDto> {
+    ): Promise<EquipamientoConAdvertenciaDto> {
         if (!admin) throw new UnauthorizedException();
 
-        await this.commandBus.execute(
+        const resultado = await this.commandBus.execute(
             new ReportarDanoCommand(id, dto.tipoDano, admin.id),
         );
-        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        const equipamiento = await this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        return {
+            ...equipamiento,
+            advertenciaCuadres: resultado.advertenciaCuadres,
+        };
     }
 
     /**
@@ -238,16 +253,24 @@ export class EquipamientoController {
             'Genera deuda por el costo total ($90,000) y cambia estado a PERDIDO.',
     })
     @ApiParam({ name: 'id', description: 'ID del equipamiento' })
-    @ApiResponse({ status: 200, type: EquipamientoResponseDto })
+    @ApiResponse({ status: 200, type: EquipamientoConAdvertenciaDto })
     @ApiResponse({ status: 400, description: 'Estado inválido para reportar pérdida' })
     async reportarPerdida(
         @Param('id', ParseUUIDPipe) id: string,
         @CurrentUser() admin: AuthenticatedUser,
-    ): Promise<EquipamientoResponseDto> {
+    ): Promise<EquipamientoConAdvertenciaDto> {
         if (!admin) throw new UnauthorizedException();
 
-        await this.commandBus.execute(new ReportarPerdidaCommand(id, admin.id));
-        return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+        const resultado = await this.commandBus.execute(
+            new ReportarPerdidaCommand(id, admin.id),
+        );
+
+        const equipamiento = await this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        return {
+            ...equipamiento,
+            advertenciaCuadres: resultado.advertenciaCuadres,
+        };
     }
 
     /**
@@ -275,5 +298,116 @@ export class EquipamientoController {
 
         await this.commandBus.execute(new DevolverEquipamientoCommand(id, admin.id));
         return this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+    }
+
+    // =============================================
+    // ENDPOINTS PARA PAGO MANUAL DE DEUDAS (ADMIN)
+    // =============================================
+
+    /**
+     * POST /equipamiento/:id/pagar-mensualidad
+     * Registrar pago de mensualidad (ADMIN)
+     */
+    @Post(':id/pagar-mensualidad')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Registrar pago de mensualidad (admin)',
+        description:
+            'Admin registra que el vendedor pagó la mensualidad del equipamiento. ' +
+            'Actualiza la fecha de última mensualidad pagada.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoConAdvertenciaDto })
+    @ApiResponse({ status: 400, description: 'Estado inválido o equipamiento no encontrado' })
+    async pagarMensualidad(
+        @Param('id', ParseUUIDPipe) id: string,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoConAdvertenciaDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        const resultado = await this.commandBus.execute(
+            new PagarMensualidadCommand(id, admin.id),
+        );
+
+        const equipamiento = await this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        return {
+            ...equipamiento,
+            advertenciaCuadres: resultado.advertenciaCuadres,
+        };
+    }
+
+    /**
+     * POST /equipamiento/:id/pagar-deuda-dano
+     * Abonar a deuda por daño (ADMIN)
+     */
+    @Post(':id/pagar-deuda-dano')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Abonar a deuda por daño (admin)',
+        description:
+            'Admin registra un abono a la deuda por daño del equipamiento. ' +
+            'Se puede abonar parcialmente o pagar el total.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoConAdvertenciaDto })
+    @ApiResponse({ status: 400, description: 'Monto inválido o sin deuda pendiente' })
+    async pagarDeudaDano(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: PagarDeudaDto,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoConAdvertenciaDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        const resultado = await this.commandBus.execute(
+            new PagarDeudaDanoCommand(id, dto.monto, admin.id),
+        );
+
+        const equipamiento = await this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        return {
+            ...equipamiento,
+            advertenciaCuadres: resultado.advertenciaCuadres,
+        };
+    }
+
+    /**
+     * POST /equipamiento/:id/pagar-deuda-perdida
+     * Abonar a deuda por pérdida (ADMIN)
+     */
+    @Post(':id/pagar-deuda-perdida')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Abonar a deuda por pérdida (admin)',
+        description:
+            'Admin registra un abono a la deuda por pérdida total del equipamiento. ' +
+            'Se puede abonar parcialmente o pagar el total.',
+    })
+    @ApiParam({ name: 'id', description: 'ID del equipamiento' })
+    @ApiResponse({ status: 200, type: EquipamientoConAdvertenciaDto })
+    @ApiResponse({ status: 400, description: 'Monto inválido o sin deuda pendiente' })
+    async pagarDeudaPerdida(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() dto: PagarDeudaDto,
+        @CurrentUser() admin: AuthenticatedUser,
+    ): Promise<EquipamientoConAdvertenciaDto> {
+        if (!admin) throw new UnauthorizedException();
+
+        const resultado = await this.commandBus.execute(
+            new PagarDeudaPerdidaCommand(id, dto.monto, admin.id),
+        );
+
+        const equipamiento = await this.queryBus.execute(new ObtenerEquipamientoQuery(id));
+
+        return {
+            ...equipamiento,
+            advertenciaCuadres: resultado.advertenciaCuadres,
+        };
     }
 }

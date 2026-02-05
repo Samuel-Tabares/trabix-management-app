@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsEnum, IsUUID, IsNumber, Min } from 'class-validator';
 import { EstadoEquipamiento } from '@prisma/client';
 
 // ========== Request DTOs ==========
@@ -27,6 +27,21 @@ export class ReportarDanoDto {
     })
     @IsEnum(['NEVERA', 'PIJAMA'])
     tipoDano!: 'NEVERA' | 'PIJAMA';
+}
+
+/**
+ * DTO para pagar deuda (admin)
+ * Usado para abonar a deuda por daño o pérdida
+ */
+export class PagarDeudaDto {
+    @ApiProperty({
+        description: 'Monto a abonar a la deuda',
+        example: 30000,
+        minimum: 1,
+    })
+    @IsNumber()
+    @Min(1, { message: 'El monto debe ser mayor a cero' })
+    monto!: number;
 }
 
 /**
@@ -147,6 +162,18 @@ export class EquipamientoResponseDto {
 
     @ApiProperty({ description: 'Si tiene alguna deuda pendiente' })
     tieneDeuda!: boolean;
+}
+
+/**
+ * DTO de respuesta de equipamiento con advertencia de cuadres
+ * Usado cuando una operación puede afectar los cuadres
+ */
+export class EquipamientoConAdvertenciaDto extends EquipamientoResponseDto {
+    @ApiPropertyOptional({
+        description: 'Advertencia si hubo error actualizando los cuadres del vendedor',
+        example: 'El daño fue registrado correctamente, pero hubo un error al actualizar los cuadres...',
+    })
+    advertenciaCuadres?: string;
 }
 
 /**
