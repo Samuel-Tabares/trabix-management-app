@@ -6,12 +6,6 @@ package-lock.json
 dist/
 build/
 
-# Environment
-.env
-.env.local
-.env.*.local
-!.env.test
-
 # IDE
 .idea/
 .vscode/
