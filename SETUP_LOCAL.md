@@ -62,6 +62,23 @@ npx prisma migrate reset
 
 ---
 
+## 🏗️ Build del proyecto
+
+```bash
+npm run build
+```
+
+Y realiza lo siguiente:
+
+* Compila **TypeScript → JavaScript**
+* Genera la carpeta **`dist/`** con el código listo para producción
+
+En resumen:
+
+> **Prepara el backend para ejecutarse en producción.**
+
+---
+
 ## ✅ Verificación de TypeScript
 
 ```bash
@@ -90,13 +107,26 @@ SELECT * FROM nombre_tabla; -- ver datos
 
 ---
 
-## 🚀 Ejecutar la aplicación en desarrollo
+## 🚀 Ejecutar la aplicación
+
+### Desarrollo (hot‑reload)
 
 ```bash
 npm run start:dev
 ```
 
-Levanta el backend en modo desarrollo con hot-reload.
+* Levanta el backend en modo desarrollo
+* Recarga automáticamente al cambiar archivos
+
+### Producción local
+
+```bash
+npm run build
+npm run start:prod
+```
+
+* Usa el código compilado en **`dist/`**
+* Simula cómo correrá en un servidor real
 
 ---
 
